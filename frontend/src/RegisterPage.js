@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { useToast } from './Toast';
+import { API_URL } from './config';
 
 /* ---------- Password strength helper ---------- */
 function getPasswordStrength(pwd) {
@@ -42,7 +43,7 @@ function RegisterPage() {
     setError('');
     setIsLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', {
+      const res = await axios.post(`${API_URL}/api/auth/register`, {
         username,
         password,
         shopName,

@@ -2,8 +2,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useToast } from './Toast';
+import { API_URL as BASE_URL } from './config';
 
-const API_URL = 'http://localhost:5000/api/orders';
+const API_URL = `${BASE_URL}/api/orders`;
 
 const STATUS_CONFIG = {
   Pending:          { color: 'bg-yellow-100 text-yellow-800 border-yellow-200',  dot: 'bg-yellow-500' },

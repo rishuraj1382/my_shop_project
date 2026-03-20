@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useToast } from './Toast';
+import { API_URL } from './config';
 
 function SkeletonCard() {
   return (
@@ -73,7 +74,7 @@ function ShopListPage() {
     setShops([]);
 
     try {
-      const res = await axios.get(`http://localhost:5000/api/shops/search/${pincode}`);
+      const res = await axios.get(`${API_URL}/api/shops/search/${pincode}`);
       setShops(res.data);
       if (res.data.length === 0) {
         toast({ message: `No shops found for pincode "${pincode}".`, type: 'info' });

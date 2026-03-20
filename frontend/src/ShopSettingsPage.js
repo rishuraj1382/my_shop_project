@@ -2,8 +2,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { API_URL as BASE_URL } from './config';
 
-const API_URL = 'http://localhost:5000/api/users/shop';
+const API_URL = `${BASE_URL}/api/users/shop`;
 
 function ShopSettingsPage() {
   const [formData, setFormData] = useState({
