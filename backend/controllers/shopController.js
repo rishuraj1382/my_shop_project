@@ -27,8 +27,12 @@ const User = require('../models/User');
 
 exports.searchShopsByPincode = async (req, res) => {
   try {
+    console.log("Pincode:", req.params.pincode);
+    
     // Update the 'select' to include the new fields
-    const shops = await User.find({ pincode: req.params.pincode }).select('shopName city fullAddress mobileNumber shopImage');
+    const shops = await User.find({ pincode: req.params.pincode }).select('shopName city fullAddress mobileNumber shopImage pincode');
+    
+    console.log("Result:", shops);
     
     if (!shops || shops.length === 0) {
       return res.json([]);
@@ -36,7 +40,7 @@ exports.searchShopsByPincode = async (req, res) => {
     
     res.json(shops);
   } catch (err) {
-    console.error(err.message);
+    console.error(`[DEBUG ERROR] `, err.message);
     res.status(500).send('Server error');
   }
 };
