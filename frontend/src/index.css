@@ -15,3 +15,90 @@ code {
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ------------------------------------------------------------------ */
+/* Accessibility: honour prefers-reduced-motion                         */
+/* ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Custom component layer                                               */
+/* ------------------------------------------------------------------ */
+@layer components {
+  /* Animated input border glow */
+  .input-animated {
+    @apply block w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg shadow-sm
+      placeholder-gray-400 bg-white text-gray-900
+      transition-all duration-200 ease-in-out
+      focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200;
+  }
+
+  .input-animated:focus {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  }
+
+  /* Primary button with press effect */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 py-2.5 px-5
+      rounded-lg font-semibold text-sm text-white
+      bg-indigo-600 hover:bg-indigo-700 active:scale-95
+      transition-all duration-200 ease-in-out
+      focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2
+      disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100;
+  }
+
+  /* Danger button */
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 py-2 px-4
+      rounded-lg font-semibold text-sm text-white
+      bg-red-500 hover:bg-red-600 active:scale-95
+      transition-all duration-200 ease-in-out
+      focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2;
+  }
+
+  /* Skeleton shimmer block */
+  .skeleton {
+    @apply bg-gray-200 rounded animate-pulse;
+    background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* Nav link with active indicator */
+  .nav-link {
+    @apply relative px-3 py-2 rounded-md text-sm font-medium
+      text-gray-600 hover:text-indigo-600
+      transition-colors duration-200;
+  }
+
+  .nav-link::after {
+    content: '';
+    @apply absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 rounded-full
+      bg-indigo-600 transition-all duration-200;
+  }
+
+  .nav-link:hover::after,
+  .nav-link.active::after {
+    @apply w-4/5;
+  }
+
+  .nav-link.active {
+    @apply text-indigo-600 font-semibold;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Keyframes used by Tailwind extended animations                        */
+/* ------------------------------------------------------------------ */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
