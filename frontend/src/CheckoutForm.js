@@ -191,6 +191,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
+import { API_URL } from './config';
 
 function CheckoutForm() {
   const { shopId } = useParams();
@@ -206,7 +207,7 @@ function CheckoutForm() {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/products/shop/${shopId}`);
+      const res = await axios.get(`${API_URL}/api/products/shop/${shopId}`);
       setProducts(res.data);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -274,7 +275,7 @@ function CheckoutForm() {
     };
 
     try {
-      const res = await axios.post('http://localhost:5000/api/orders', orderData);
+      const res = await axios.post(`${API_URL}/api/orders`, orderData);
       alert(`Order placed successfully! Your Order ID is: ${res.data._id}`);
       setCustomerName('');
       setCustomerContact('');

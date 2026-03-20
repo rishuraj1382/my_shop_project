@@ -4,8 +4,9 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useOrder } from './OrderContext';
+import { API_URL } from './config';
 
-const socket = io('http://localhost:5000');
+const socket = io(API_URL);
 
 function OrderTrackingPage() {
   const { orderId } = useParams();
@@ -24,7 +25,7 @@ function OrderTrackingPage() {
         setError('');
         setOrderDetails(null);
         try {
-          const res = await axios.get(`http://localhost:5000/api/orders/track/${orderId}`);
+          const res = await axios.get(`${API_URL}/api/orders/track/${orderId}`);
           setOrderDetails(res.data);
           setLastTrackedOrderId(orderId);
         } catch (err) {

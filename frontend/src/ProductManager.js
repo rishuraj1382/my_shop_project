@@ -156,8 +156,9 @@
 // frontend/src/ProductManager.js
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { API_URL as BASE_URL } from './config';
 
-const API_URL = 'http://localhost:5000/api/products';
+const API_URL = `${BASE_URL}/api/products`;
 
 function ProductManager() {
   const [products, setProducts] = useState([]);

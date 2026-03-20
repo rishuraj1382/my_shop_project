@@ -9,19 +9,22 @@ const { Server } = require("socket.io"); // 2. Import Server from socket.io
 const app = express();
 const server = http.createServer(app); // 3. Create an HTTP server from the Express app
 
+const corsOptions = {
+  origin: ['http://localhost:3000', 'https://my-shop-project-frontend.onrender.com'],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+};
+
 // 4. Initialize Socket.IO
 const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:3000", // Allow your frontend to connect
-    methods: ["GET", "POST"]
-  }
+  cors: corsOptions
 });
 
 // Connect to the database
 connectDB();
 
 // Middlewares
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // 5. Make the 'io' instance available to all routes
