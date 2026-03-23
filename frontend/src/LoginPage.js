@@ -35,87 +35,87 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-200px)] bg-gradient-to-br from-purple-600 to-blue-500 p-4">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-2xl animate-scale-in">
-        {/* Header */}
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-indigo-100 mb-3">
-            <span className="text-2xl">🔐</span>
-          </div>
-          <h2 className="text-3xl font-extrabold text-gray-800">Shopkeeper Login</h2>
-          <p className="mt-1 text-sm text-gray-500">Welcome back! Sign in to your account.</p>
+    <div className="flex items-center justify-center min-h-[calc(100vh-200px)] p-4 animate-fade-in">
+      <div className="max-w-md w-full flex flex-col gap-8">
+        {/* Branding */}
+        <div className="space-y-2 text-center">
+          <span className="text-primary font-headline font-black text-3xl tracking-tighter">Marketplace</span>
+          <h1 className="text-3xl font-headline font-bold mt-4 tracking-tight text-on-surface">Welcome Back</h1>
+          <p className="text-on-surface-variant mt-2 text-sm">Please enter your details to sign in</p>
         </div>
 
-        {/* Inline error */}
-        {error && (
-          <div
-            role="alert"
-            className="flex items-center gap-2 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm animate-slide-down"
-          >
-            <span className="text-base font-bold">✕</span>
-            <span>{error}</span>
+        {/* Login Card */}
+        <div className="bg-surface-container-lowest p-10 rounded-xl shadow-sm animate-scale-in">
+          {/* Inline error */}
+          {error && (
+            <div
+              role="alert"
+              className="flex items-center gap-2 px-4 py-3 rounded-lg bg-error-container text-on-error-container text-sm mb-6 animate-slide-down"
+            >
+              <span className="material-symbols-outlined text-lg">error</span>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+            <div>
+              <label htmlFor="username" className="label-stitch">Username</label>
+              <input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="input-stitch"
+                placeholder="Enter your username"
+                autoComplete="username"
+                required
+              />
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2 ml-1">
+                <label htmlFor="password" className="text-[0.6875rem] font-medium tracking-widest uppercase text-on-surface-variant">Password</label>
+              </div>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input-stitch"
+                placeholder="••••••••"
+                autoComplete="current-password"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn-primary w-full mt-2"
+            >
+              {isLoading ? (
+                <>
+                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin-slow" />
+                  Signing in…
+                </>
+              ) : (
+                'Login'
+              )}
+            </button>
+          </form>
+
+          <div className="mt-8 text-center">
+            <p className="text-sm text-on-surface-variant">
+              Don't have an account?{' '}
+              <Link to="/register" className="text-primary font-bold hover:underline">
+                Register
+              </Link>
+            </p>
           </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-          <div className="space-y-1">
-            <label htmlFor="username" className="block text-sm font-semibold text-gray-700">
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="input-animated"
-              placeholder="Enter your username"
-              autoComplete="username"
-              required
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input-animated"
-              placeholder="Enter your password"
-              autoComplete="current-password"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="btn-primary w-full mt-2"
-          >
-            {isLoading ? (
-              <>
-                <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin-slow" />
-                Signing in…
-              </>
-            ) : (
-              'Login'
-            )}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-gray-500">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-indigo-600 font-semibold hover:underline">
-            Register here
-          </Link>
-        </p>
+        </div>
       </div>
     </div>
   );
 }
 
 export default LoginPage;
-

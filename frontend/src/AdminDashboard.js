@@ -7,24 +7,22 @@ import { API_URL as BASE_URL } from './config';
 const API_URL = `${BASE_URL}/api/orders`;
 
 const STATUS_CONFIG = {
-  Pending:          { color: 'bg-yellow-100 text-yellow-800 border-yellow-200',  dot: 'bg-yellow-500' },
-  Confirmed:        { color: 'bg-blue-100 text-blue-800 border-blue-200',        dot: 'bg-blue-500' },
-  Packed:           { color: 'bg-purple-100 text-purple-800 border-purple-200',  dot: 'bg-purple-500' },
-  'Ready to Deliver': { color: 'bg-green-100 text-green-800 border-green-200',   dot: 'bg-green-500' },
+  Pending:            { color: 'bg-yellow-50 text-yellow-800 border-yellow-200',  dot: 'bg-yellow-500', icon: 'schedule' },
+  Confirmed:          { color: 'bg-blue-50 text-blue-800 border-blue-200',        dot: 'bg-blue-500', icon: 'check_circle' },
+  Packed:             { color: 'bg-purple-50 text-purple-800 border-purple-200',  dot: 'bg-purple-500', icon: 'inventory_2' },
+  'Ready to Deliver': { color: 'bg-emerald-50 text-emerald-800 border-emerald-200', dot: 'bg-emerald-500', icon: 'local_shipping' },
 };
 
 function SkeletonOrderCard() {
   return (
-    <div className="bg-white rounded-xl shadow-md p-6 flex flex-col gap-3">
-      <div className="skeleton h-6 w-2/3 rounded" />
-      <div className="skeleton h-4 w-1/2 rounded" />
-      <div className="skeleton h-4 w-3/4 rounded" />
-      <div className="skeleton h-5 w-24 rounded-full mt-1" />
-      <div className="skeleton h-4 w-1/3 rounded mt-2" />
-      <div className="skeleton h-4 w-1/2 rounded" />
-      <div className="flex gap-2 mt-4">
-        <div className="skeleton h-9 w-32 rounded-lg" />
-        <div className="skeleton h-9 w-20 rounded-lg" />
+    <div className="bg-surface-container-lowest rounded-2xl p-6 flex flex-col gap-4">
+      <div className="skeleton h-5 w-3/5 rounded" />
+      <div className="skeleton h-4 w-2/5 rounded" />
+      <div className="skeleton h-4 w-4/5 rounded" />
+      <div className="skeleton h-6 w-24 rounded-full mt-1" />
+      <div className="flex gap-2 mt-3">
+        <div className="skeleton h-10 w-32 rounded-xl" />
+        <div className="skeleton h-10 w-20 rounded-xl" />
       </div>
     </div>
   );
@@ -76,54 +74,56 @@ function AdminDashboard() {
 
   const renderStatusButton = (order) => {
     const transitions = {
-      Pending:   { next: 'Confirmed',        label: '✓ Confirm Order',          cls: 'btn-primary !bg-blue-600 hover:!bg-blue-700' },
-      Confirmed: { next: 'Packed',           label: '📦 Mark as Packed',         cls: 'btn-primary !bg-purple-600 hover:!bg-purple-700' },
-      Packed:    { next: 'Ready to Deliver', label: '🚚 Ready to Deliver',       cls: 'btn-primary !bg-green-600 hover:!bg-green-700' },
+      Pending:   { next: 'Confirmed',        label: 'Confirm',           icon: 'check',       cls: 'bg-blue-600 hover:bg-blue-700' },
+      Confirmed: { next: 'Packed',           label: 'Mark Packed',       icon: 'inventory_2', cls: 'bg-purple-600 hover:bg-purple-700' },
+      Packed:    { next: 'Ready to Deliver', label: 'Ready to Deliver',  icon: 'local_shipping', cls: 'bg-emerald-600 hover:bg-emerald-700' },
     };
     const t = transitions[order.status];
-    if (!t) return <span className="text-sm font-medium text-gray-400 italic">✅ Complete</span>;
+    if (!t) return <span className="text-xs font-bold text-emerald-600 flex items-center gap-1"><span className="material-symbols-outlined text-sm">done_all</span>Complete</span>;
     return (
       <button
         onClick={() => handleUpdateStatus(order._id, t.next)}
-        className={`${t.cls} text-sm`}
+        className={`${t.cls} text-white px-4 py-2.5 rounded-xl font-bold text-xs inline-flex items-center gap-2 active:scale-95 transition-all shadow-sm`}
       >
+        <span className="material-symbols-outlined text-sm">{t.icon}</span>
         {t.label}
       </button>
     );
   };
 
-  const statusConf = (status) => STATUS_CONFIG[status] || { color: 'bg-gray-100 text-gray-700 border-gray-200', dot: 'bg-gray-400' };
+  const statusConf = (status) => STATUS_CONFIG[status] || { color: 'bg-gray-100 text-gray-700 border-gray-200', dot: 'bg-gray-400', icon: 'help' };
 
   const pendingCount   = orders.filter((o) => o.status === 'Pending').length;
   const confirmedCount = orders.filter((o) => o.status === 'Confirmed' || o.status === 'Packed').length;
   const doneCount      = orders.filter((o) => o.status === 'Ready to Deliver').length;
 
   return (
-    <div className="container mx-auto px-4 animate-fade-in">
+    <div className="animate-fade-in">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-extrabold text-gray-800">Shopkeeper Dashboard</h1>
-        <p className="text-gray-500 mt-1">Manage and track all your incoming orders.</p>
+      <div className="mb-10">
+        <span className="font-label text-primary font-bold tracking-widest text-[10px] uppercase">Admin Panel</span>
+        <h1 className="text-4xl font-headline font-extrabold text-on-surface tracking-tight mt-2">Shopkeeper Dashboard</h1>
+        <p className="text-on-surface-variant mt-2">Manage and track all your incoming orders.</p>
       </div>
 
       {/* Stats bar */}
       {!isLoading && orders.length > 0 && (
-        <div className="grid grid-cols-3 gap-4 mb-8 animate-slide-up">
-          <StatCard label="Pending" value={pendingCount} color="text-yellow-600" bg="bg-yellow-50" />
-          <StatCard label="In Progress" value={confirmedCount} color="text-blue-600" bg="bg-blue-50" />
-          <StatCard label="Ready" value={doneCount} color="text-green-600" bg="bg-green-50" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 animate-slide-up">
+          <StatCard label="Pending" value={pendingCount} icon="schedule" bg="bg-yellow-50" color="text-yellow-700" iconColor="text-yellow-500" />
+          <StatCard label="In Progress" value={confirmedCount} icon="sync" bg="bg-blue-50" color="text-blue-700" iconColor="text-blue-500" />
+          <StatCard label="Ready" value={doneCount} icon="check_circle" bg="bg-emerald-50" color="text-emerald-700" iconColor="text-emerald-500" />
         </div>
       )}
 
       {/* Order cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {isLoading ? (
           [0, 1, 2, 3, 4, 5].map((i) => <SkeletonOrderCard key={i} />)
         ) : orders.length === 0 ? (
-          <div className="col-span-full text-center py-20 animate-fade-in">
-            <div className="text-6xl mb-4">📋</div>
-            <p className="text-gray-500 text-xl font-medium">No orders yet.</p>
-            <p className="text-gray-400 mt-1">New orders will appear here.</p>
+          <div className="col-span-full text-center py-24 animate-fade-in">
+            <span className="material-symbols-outlined text-6xl text-outline/30">receipt_long</span>
+            <p className="text-on-surface-variant text-lg font-medium mt-4">No orders yet.</p>
+            <p className="text-outline text-sm mt-1">New orders will appear here.</p>
           </div>
         ) : (
           orders.map((order, i) => {
@@ -131,32 +131,38 @@ function AdminDashboard() {
             return (
               <div
                 key={order._id}
-                className="bg-white rounded-xl shadow-md p-6 flex flex-col justify-between
-                  hover:shadow-lg transition-shadow duration-200 animate-slide-up border border-gray-100"
+                className="bg-surface-container-lowest rounded-2xl p-6 flex flex-col justify-between
+                  hover:shadow-xl transition-all duration-300 animate-slide-up border border-outline-variant/10"
                 style={{ animationDelay: `${i * 60}ms` }}
               >
                 <div>
                   {/* Customer info */}
-                  <div className="mb-3">
-                    <h3 className="text-lg font-bold text-gray-900">{order.customerName}</h3>
-                    <p className="text-sm text-gray-500">{order.customerContact}</p>
-                    <p className="text-sm text-gray-500">{order.customerAddress}</p>
+                  <div className="mb-4">
+                    <h3 className="font-headline font-bold text-on-surface text-lg">{order.customerName}</h3>
+                    <div className="flex items-center gap-2 text-on-surface-variant text-sm mt-1">
+                      <span className="material-symbols-outlined text-sm">call</span>
+                      {order.customerContact}
+                    </div>
+                    <div className="flex items-start gap-2 text-on-surface-variant text-sm mt-1">
+                      <span className="material-symbols-outlined text-sm mt-0.5">pin_drop</span>
+                      {order.customerAddress}
+                    </div>
                   </div>
 
                   {/* Status badge */}
-                  <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${sc.color} mb-3`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${sc.color} mb-4`}>
+                    <span className="material-symbols-outlined text-xs">{sc.icon}</span>
                     {order.status}
                   </span>
 
                   {/* Items */}
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-700 mb-1">Items</h4>
-                    <ul className="space-y-0.5">
+                  <div className="bg-surface-container-low rounded-xl p-4">
+                    <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Items</h4>
+                    <ul className="space-y-1">
                       {order.items.map((item, idx) => (
-                        <li key={idx} className="text-sm text-gray-600 flex justify-between">
+                        <li key={idx} className="text-sm text-on-surface flex justify-between">
                           <span>{item.name}</span>
-                          <span className="text-gray-400">× {item.quantity}</span>
+                          <span className="text-outline font-medium">× {item.quantity}</span>
                         </li>
                       ))}
                     </ul>
@@ -168,8 +174,9 @@ function AdminDashboard() {
                   {renderStatusButton(order)}
                   <button
                     onClick={() => handleRemoveOrder(order._id)}
-                    className="btn-danger text-sm"
+                    className="btn-danger text-xs"
                   >
+                    <span className="material-symbols-outlined text-sm">delete</span>
                     Remove
                   </button>
                 </div>
@@ -182,14 +189,18 @@ function AdminDashboard() {
   );
 }
 
-function StatCard({ label, value, color, bg }) {
+function StatCard({ label, value, icon, bg, color, iconColor }) {
   return (
-    <div className={`${bg} rounded-xl p-4 text-center border border-gray-100`}>
-      <p className={`text-3xl font-extrabold ${color}`}>{value}</p>
-      <p className="text-sm text-gray-500 font-medium mt-1">{label}</p>
+    <div className={`${bg} rounded-2xl p-5 flex items-center gap-4`}>
+      <div className={`w-12 h-12 rounded-xl ${bg} flex items-center justify-center`}>
+        <span className={`material-symbols-outlined text-2xl ${iconColor}`}>{icon}</span>
+      </div>
+      <div>
+        <p className={`text-2xl font-headline font-extrabold ${color}`}>{value}</p>
+        <p className="text-xs text-on-surface-variant font-medium uppercase tracking-wider">{label}</p>
+      </div>
     </div>
   );
 }
 
 export default AdminDashboard;
-

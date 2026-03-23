@@ -7,13 +7,13 @@ import { API_URL } from './config';
 
 function SkeletonCard() {
   return (
-    <div className="w-full max-w-2xl bg-white rounded-xl shadow-md overflow-hidden">
-      <div className="skeleton h-48 w-full" />
+    <div className="bg-surface-container-lowest rounded-2xl overflow-hidden animate-pulse">
+      <div className="h-14 bg-surface-container-high" />
       <div className="p-6 space-y-3">
-        <div className="skeleton h-6 w-3/5 rounded" />
-        <div className="skeleton h-4 w-4/5 rounded" />
-        <div className="skeleton h-4 w-2/5 rounded" />
-        <div className="skeleton h-9 w-28 rounded-lg mt-2" />
+        <div className="skeleton h-4 w-3/5 rounded" />
+        <div className="skeleton h-3 w-4/5 rounded" />
+        <div className="skeleton h-3 w-2/5 rounded" />
+        <div className="skeleton h-10 w-28 rounded-xl mt-2" />
       </div>
     </div>
   );
@@ -22,34 +22,32 @@ function SkeletonCard() {
 function ShopCard({ shop, index }) {
   return (
     <div
-      className="w-full max-w-2xl bg-white rounded-xl shadow-md overflow-hidden
-        hover:shadow-xl hover:-translate-y-1 transition-all duration-300
-        animate-slide-up"
+      className="bg-surface-container-lowest rounded-2xl overflow-hidden group hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 flex flex-col h-full animate-slide-up"
       style={{ animationDelay: `${index * 80}ms` }}
     >
-      {shop.shopImage && (
-        <img
-          src={shop.shopImage}
-          alt={shop.shopName}
-          className="w-full h-48 object-cover"
-        />
-      )}
-      <div className="p-6">
-        <h2 className="text-2xl font-bold text-gray-900">{shop.shopName}</h2>
-        <p className="text-gray-600 mt-1">
-          <span className="mr-1">📍</span>
-          {shop.fullAddress}, {shop.city}
-        </p>
-        <p className="text-gray-500 text-sm mt-1">
-          <span className="mr-1">📞</span>
-          {shop.mobileNumber}
-        </p>
-        <Link
-          to={`/shop/${shop._id}`}
-          className="inline-flex items-center gap-2 mt-4 btn-primary !bg-green-600 hover:!bg-green-700 focus:!ring-green-400"
-        >
-          Visit Shop →
-        </Link>
+      <div className="bg-primary px-6 py-5">
+        <h3 className="font-headline text-xl font-bold text-white tracking-tight">{shop.shopName}</h3>
+      </div>
+      <div className="p-6 flex flex-col flex-1">
+        <div className="space-y-3 mb-6">
+          <div className="flex items-start gap-3 text-on-surface-variant">
+            <span className="material-symbols-outlined text-sm mt-0.5">pin_drop</span>
+            <p className="text-sm">{shop.fullAddress}, {shop.city}</p>
+          </div>
+          <div className="flex items-center gap-3 text-on-surface-variant">
+            <span className="material-symbols-outlined text-sm">call</span>
+            <p className="text-sm font-medium">{shop.mobileNumber}</p>
+          </div>
+        </div>
+        <div className="mt-auto">
+          <Link
+            to={`/shop/${shop._id}`}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold font-headline text-sm transition-all inline-flex items-center gap-2 active:scale-95 shadow-lg shadow-emerald-500/20"
+          >
+            Visit Shop
+            <span className="material-symbols-outlined text-sm">arrow_forward</span>
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -60,7 +58,6 @@ function ShopListPage() {
   const [shops, setShops] = useState([]);
   const [searched, setSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [inputFocused, setInputFocused] = useState(false);
   const toast = useToast();
 
   const handleSearch = async (e) => {
@@ -88,68 +85,79 @@ function ShopListPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 animate-fade-in">
-      {/* Hero section */}
-      <div className="text-center mb-10">
-        <h1 className="text-4xl font-extrabold text-gray-800 mb-2">Find Shops Near You</h1>
-        <p className="text-gray-500 text-lg">Enter your pincode to discover local shops in your area.</p>
-      </div>
+    <div className="animate-fade-in">
+      {/* Hero Section */}
+      <section className="relative py-16 md:py-24 overflow-hidden">
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <h1 className="font-headline text-5xl md:text-7xl font-extrabold text-on-surface tracking-tighter mb-8 leading-[1.1]">
+            Find Shops <span className="text-primary italic">Near You</span>
+          </h1>
 
-      {/* Search form */}
-      <form
-        onSubmit={handleSearch}
-        className="flex justify-center mb-12"
-      >
-        <div
-          className={`flex w-full max-w-lg rounded-xl overflow-hidden shadow-md transition-shadow duration-200 ${
-            inputFocused ? 'shadow-indigo-200 shadow-lg' : ''
-          }`}
-        >
-          <input
-            type="text"
-            value={pincode}
-            onChange={(e) => setPincode(e.target.value)}
-            onFocus={() => setInputFocused(true)}
-            onBlur={() => setInputFocused(false)}
-            placeholder="🔍  Enter your pincode…"
-            className="flex-1 px-5 py-3 border-2 border-r-0 border-gray-200 focus:border-indigo-400 focus:outline-none transition-colors duration-200 text-gray-800 text-base"
-          />
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="btn-primary rounded-none px-7 !py-3 disabled:opacity-70"
-          >
-            {isLoading ? (
-              <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin-slow" />
-            ) : (
-              'Search'
-            )}
-          </button>
+          {/* Search Bar */}
+          <form onSubmit={handleSearch} className="mt-12 max-w-2xl mx-auto">
+            <div className="bg-surface-container-lowest p-2 rounded-2xl flex flex-col md:flex-row gap-2 shadow-xl shadow-on-surface/5 border border-outline-variant/20">
+              <div className="flex-1 flex items-center px-4 gap-3">
+                <span className="material-symbols-outlined text-outline">location_on</span>
+                <input
+                  type="text"
+                  value={pincode}
+                  onChange={(e) => setPincode(e.target.value)}
+                  placeholder="Enter pincode (e.g. 799046)"
+                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface py-3 font-medium placeholder-outline/60"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="bg-primary text-white px-10 py-4 rounded-xl font-bold font-headline transition-all hover:bg-primary-container active:scale-95 disabled:opacity-60"
+              >
+                {isLoading ? (
+                  <span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin-slow" />
+                ) : (
+                  'Search'
+                )}
+              </button>
+            </div>
+          </form>
         </div>
-      </form>
+
+        {/* Background Decoration */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl -z-10"></div>
+      </section>
 
       {/* Results */}
-      <div className="flex flex-col items-center space-y-6">
-        {isLoading ? (
-          /* Skeleton loading state */
-          [0, 1, 2].map((i) => <SkeletonCard key={i} />)
-        ) : (
-          searched && (
-            shops.length > 0 ? (
-              shops.map((shop, i) => <ShopCard key={shop._id} shop={shop} index={i} />)
-            ) : (
-              <div className="text-center py-16 animate-fade-in">
-                <div className="text-5xl mb-4">🏪</div>
-                <p className="text-gray-500 text-lg font-medium">No shops found for this pincode.</p>
-                <p className="text-gray-400 text-sm mt-1">Try a different pincode.</p>
-              </div>
-            )
-          )
+      <section className="max-w-6xl mx-auto px-4 pb-16">
+        {(searched || isLoading) && (
+          <div className="flex justify-between items-end mb-10">
+            <div>
+              <span className="font-label text-primary font-bold tracking-widest text-[10px] uppercase">Results</span>
+              <h2 className="font-headline text-3xl font-bold text-on-surface mt-2">
+                {isLoading ? 'Searching…' : shops.length > 0 ? 'Shops in your area' : 'No results'}
+              </h2>
+            </div>
+          </div>
         )}
-      </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {isLoading ? (
+            [0, 1, 2].map((i) => <SkeletonCard key={i} />)
+          ) : (
+            searched && (
+              shops.length > 0 ? (
+                shops.map((shop, i) => <ShopCard key={shop._id} shop={shop} index={i} />)
+              ) : (
+                <div className="col-span-full text-center py-20 animate-fade-in">
+                  <div className="text-6xl mb-4">🏪</div>
+                  <p className="text-on-surface-variant text-lg font-medium">No shops found for this pincode.</p>
+                  <p className="text-outline text-sm mt-1">Try a different pincode.</p>
+                </div>
+              )
+            )
+          )}
+        </div>
+      </section>
     </div>
   );
 }
 
 export default ShopListPage;
-

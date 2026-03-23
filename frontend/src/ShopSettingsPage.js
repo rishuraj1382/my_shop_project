@@ -53,7 +53,7 @@ function ShopSettingsPage() {
     try {
       await axios.put(API_URL, formData, getConfig());
       alert('Shop details updated successfully!');
-      navigate('/admin'); // Navigate back to the dashboard after saving
+      navigate('/admin');
     } catch (error) {
       console.error('Failed to update shop details:', error);
       alert('Update failed. Please try again.');
@@ -61,44 +61,60 @@ function ShopSettingsPage() {
   };
 
   if (isLoading) {
-    return <div>Loading your shop settings...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+        <div className="text-center">
+          <span className="inline-block w-8 h-8 border-3 border-primary/30 border-t-primary rounded-full animate-spin-slow" />
+          <p className="text-on-surface-variant mt-4 text-sm">Loading your shop settings…</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-200px)] p-4">
-      <div className="w-full max-w-lg p-8 space-y-6 bg-white rounded-xl shadow-2xl">
-        <h2 className="text-3xl font-bold text-center text-gray-800">Update Your Shop Details</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-gray-700">Shop Name</label>
-            <input name="shopName" value={formData.shopName} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700">Full Address</label>
-            <textarea name="fullAddress" value={formData.fullAddress} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700">City</label>
-            <input name="city" value={formData.city} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700">Pincode</label>
-            <input name="pincode" value={formData.pincode} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700">Mobile Number</label>
-            <input name="mobileNumber" value={formData.mobileNumber} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700">Shop Image URL</label>
-            <input name="shopImage" value={formData.shopImage} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
-          </div>
-          <div>
-            <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition duration-300">
+    <div className="flex items-center justify-center min-h-[calc(100vh-200px)] p-4 animate-fade-in">
+      <div className="w-full max-w-lg">
+        <div className="text-center mb-8">
+          <span className="material-symbols-outlined text-primary text-4xl mb-4 block">settings</span>
+          <span className="font-label text-primary font-bold tracking-widest text-[10px] uppercase">Settings</span>
+          <h2 className="text-3xl font-headline font-extrabold text-on-surface tracking-tight mt-2">Shop Details</h2>
+          <p className="text-on-surface-variant text-sm mt-2">Update your business information below.</p>
+        </div>
+
+        <div className="bg-surface-container-lowest p-8 md:p-10 rounded-2xl shadow-sm animate-scale-in">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="label-stitch">Shop Name</label>
+              <input name="shopName" value={formData.shopName} onChange={handleChange} className="input-stitch" required />
+            </div>
+            <div>
+              <label className="label-stitch">Full Address</label>
+              <textarea name="fullAddress" value={formData.fullAddress} onChange={handleChange} className="input-stitch resize-none" rows={2} required />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="label-stitch">City</label>
+                <input name="city" value={formData.city} onChange={handleChange} className="input-stitch" required />
+              </div>
+              <div>
+                <label className="label-stitch">Pincode</label>
+                <input name="pincode" value={formData.pincode} onChange={handleChange} className="input-stitch" required />
+              </div>
+            </div>
+            <div>
+              <label className="label-stitch">Mobile Number</label>
+              <input name="mobileNumber" value={formData.mobileNumber} onChange={handleChange} className="input-stitch" required />
+            </div>
+            <div>
+              <label className="label-stitch">Shop Image URL</label>
+              <input name="shopImage" value={formData.shopImage} onChange={handleChange} className="input-stitch" />
+            </div>
+            <button type="submit" className="btn-success w-full mt-4">
+              <span className="material-symbols-outlined text-lg">save</span>
               Save Changes
             </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );
