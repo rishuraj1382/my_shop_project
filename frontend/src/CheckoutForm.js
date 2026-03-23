@@ -1,192 +1,3 @@
-// // frontend/src/CheckoutForm.js
-// import React, { useState, useEffect, useCallback } from 'react';
-// import axios from 'axios';
-// import { useParams } from 'react-router-dom';
-
-// function CheckoutForm() {
-//   const { shopId } = useParams();
-//   const [products, setProducts] = useState([]);
-//   const [cartItems, setCartItems] = useState([]);
-//   const [customerName, setCustomerName] = useState('');
-//   const [customerContact, setCustomerContact] = useState('');
-//   const [customerAddress, setCustomerAddress] = useState('');
-//   const [searchTerm, setSearchTerm] = useState('');
-
-//   const fetchProducts = useCallback(async () => {
-//     try {
-//       const res = await axios.get(`http://localhost:5000/api/products/shop/${shopId}`);
-//       setProducts(res.data);
-//     } catch (error) {
-//       console.error("Error fetching products:", error);
-//     }
-//   }, [shopId]);
-
-//   useEffect(() => {
-//     if (shopId) {
-//       fetchProducts();
-//     }
-//   }, [shopId, fetchProducts]);
-
-//   const addToCart = (productToAdd) => {
-//     const existingItem = cartItems.find(item => item._id === productToAdd._id);
-//     if (existingItem) {
-//       setCartItems(cartItems.map(item =>
-//         item._id === productToAdd._id
-//           ? { ...item, quantity: item.quantity + 1 }
-//           : item
-//       ));
-//     } else {
-//       setCartItems([...cartItems, { ...productToAdd, quantity: 1 }]);
-//     }
-//   };
-
-//   const removeFromCart = (productId) => {
-//     setCartItems(cartItems.filter(item => item._id !== productId));
-//   };
-
-//   const cartTotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     if (cartItems.length === 0) {
-//       alert('Please add items to your cart!');
-//       return;
-//     }
-
-//     const orderData = {
-//       customerName,
-//       customerContact,
-//       customerAddress,
-//       items: cartItems.map(item => ({ name: item.name, quantity: item.quantity })),
-//       shopId: shopId,
-//     };
-
-//     try {
-//       const res = await axios.post('http://localhost:5000/api/orders', orderData);
-//       alert(`Order placed successfully! Your Order ID is: ${res.data._id}`);
-//       setCustomerName('');
-//       setCustomerContact('');
-//       setCustomerAddress('');
-//       setCartItems([]);
-//     } catch (error) {
-//       console.error('Error placing order:', error);
-//       alert('Failed to place order.');
-//     }
-//   };
-
-//   const filteredProducts = products.filter(product =>
-//     product.name.toLowerCase().includes(searchTerm.toLowerCase())
-//   );
-
-//   return (
-//     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-//       {/* Products Section */}
-//       <div className="md:col-span-2">
-//         <div className="flex justify-between items-center mb-6">
-//           <h2 className="text-3xl font-bold text-gray-800">Available Products</h2>
-//           {/* THE SEARCH BAR */}
-//           <input
-//             type="text"
-//             placeholder="Search for a product..."
-//             className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-//             value={searchTerm}
-//             onChange={(e) => setSearchTerm(e.target.value)}
-//           />
-//         </div>
-//         {/* UPDATED FOR HORIZONTAL SCROLL */}
-//         <div className="flex overflow-x-auto space-x-6 py-4">
-//           {filteredProducts.map((product) => (
-//             <div key={product._id} className="bg-white rounded-lg shadow-md p-4 flex flex-col justify-between w-64 flex-shrink-0">
-//               <div>
-//                 <h3 className="text-lg font-semibold text-gray-900">{product.name}</h3>
-//                 <p className="text-gray-600 mt-1">Rs {product.price.toFixed(2)}</p>
-//               </div>
-//               <button 
-//                 onClick={() => addToCart(product)}
-//                 className="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md transition duration-300"
-//               >
-//                 Add to Cart
-//               </button>
-//             </div>
-//           ))}
-//         </div>
-//       </div>
-
-//       {/* Cart and Checkout Section */}
-//       <div className="md:col-span-1 bg-white rounded-lg shadow-md p-6">
-//         <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Shopping Cart</h2>
-//         {cartItems.length === 0 ? (
-//           <p className="text-gray-500">Your cart is empty.</p>
-//         ) : (
-//           <div className="space-y-3">
-//             {cartItems.map(item => (
-//               <div key={item._id} className="flex justify-between items-center">
-//                 <div>
-//                   <p className="font-semibold">{item.name}</p>
-//                   <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
-//                 </div>
-//                 <button 
-//                   onClick={() => removeFromCart(item._id)} 
-//                   className="text-red-500 hover:text-red-700 font-semibold"
-//                 >
-//                   Remove
-//                 </button>
-//               </div>
-//             ))}
-//             <hr className="my-4" />
-//             <div className="flex justify-between font-bold text-lg">
-//               <span>Total:</span>
-//               <span>Rs {cartTotal.toFixed(2)}</span>
-//             </div>
-//           </div>
-//         )}
-        
-//         {cartItems.length > 0 && (
-//           <form onSubmit={handleSubmit} className="mt-6">
-//             <h3 className="text-xl font-bold text-gray-800 mb-4">Enter Your Details to Checkout</h3>
-//             <div className="space-y-4">
-//               <input 
-//                 type="text" 
-//                 placeholder="Your Name" 
-//                 value={customerName} 
-//                 onChange={(e) => setCustomerName(e.target.value)} 
-//                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-//                 required 
-//               />
-//               <input 
-//                 type="text" 
-//                 placeholder="Contact Number" 
-//                 value={customerContact} 
-//                 onChange={(e) => setCustomerContact(e.target.value)} 
-//                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-//                 required 
-//               />
-//               <textarea 
-//                 placeholder="Delivery Address" 
-//                 value={customerAddress} 
-//                 onChange={(e) => setCustomerAddress(e.target.value)} 
-//                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-//                 required 
-//               />
-//             </div>
-//             <button 
-//               type="submit" 
-//               className="mt-6 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300"
-//             >
-//               Place Order
-//             </button>
-//           </form>
-//         )}
-//       </div>
-//     </div>
-//   );
-// }
-
-// export default CheckoutForm;
-
-
-
-
 // frontend/src/CheckoutForm.js
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
@@ -268,8 +79,8 @@ function CheckoutForm() {
       items: cartItems.map(item => ({ 
           name: item.name, 
           quantity: item.quantity,
-          price: item.price, // Price at time of order
-          unit: item.unit    // Unit at time of order
+          price: item.price,
+          unit: item.unit
         })),
       shopId: shopId,
     };
@@ -293,42 +104,61 @@ function CheckoutForm() {
   );
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
       {/* Products Section */}
-      <div className="md:col-span-2">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-gray-800">Available Products</h2>
-          <input
-            type="text"
-            placeholder="Search for a product..."
-            className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="lg:col-span-2">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-10">
+          <div>
+            <span className="font-label text-primary font-bold tracking-widest text-[10px] uppercase">Catalog</span>
+            <h2 className="font-headline text-3xl font-bold text-on-surface mt-1">Available Products</h2>
+          </div>
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
+            <input
+              type="text"
+              placeholder="Search products…"
+              className="input-stitch pl-10 pr-4 max-w-xs"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((product) => (
-            <div key={product._id} className="bg-white rounded-lg shadow-md p-4 flex flex-col">
-              <img src={product.productImage} alt={product.name} className="w-full h-40 object-cover rounded-md mb-4"/>
-              <div className="flex-grow">
-                <h3 className="text-lg font-semibold text-gray-900">{product.name}</h3>
-                <p className="text-gray-600 mt-1">Rs {product.price.toFixed(2)} <span className="text-sm">({product.unit})</span></p>
-              </div>
-              <div className="mt-4 flex items-center space-x-2">
-                <input 
-                  type="number"
-                  min="0.1"
-                  step="0.1"
-                  placeholder="Qty"
-                  className="w-20 px-2 py-1 border border-gray-300 rounded-md"
-                  onChange={(e) => handleQuantityChange(product._id, e.target.value)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredProducts.map((product, i) => (
+            <div
+              key={product._id}
+              className="bg-surface-container-lowest rounded-2xl overflow-hidden group hover:shadow-xl transition-all duration-300 flex flex-col animate-slide-up"
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <div className="aspect-square overflow-hidden bg-surface-container-high">
+                <img
+                  src={product.productImage}
+                  alt={product.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <button 
-                  onClick={() => addToCart(product)}
-                  className="flex-grow bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md transition duration-300"
-                >
-                  Add
-                </button>
+              </div>
+              <div className="p-5 flex flex-col flex-1">
+                <h3 className="font-headline font-bold text-on-surface tracking-tight">{product.name}</h3>
+                <p className="text-on-surface-variant text-sm mt-1">
+                  ₹{product.price.toFixed(2)} <span className="text-xs text-outline">({product.unit})</span>
+                </p>
+                <div className="mt-auto pt-4 flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    placeholder="Qty"
+                    className="w-20 px-3 py-2.5 rounded-xl bg-surface-container-high border-none text-sm text-on-surface placeholder-outline focus:ring-2 focus:ring-primary/20 outline-none"
+                    onChange={(e) => handleQuantityChange(product._id, e.target.value)}
+                  />
+                  <button
+                    onClick={() => addToCart(product)}
+                    className="flex-1 bg-primary text-on-primary py-2.5 rounded-xl font-bold text-sm
+                      hover:bg-primary-container active:scale-95 transition-all shadow-lg shadow-primary/20"
+                  >
+                    Add
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -336,47 +166,55 @@ function CheckoutForm() {
       </div>
 
       {/* Cart and Checkout Section */}
-      <div className="md:col-span-1 bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Shopping Cart</h2>
-        {cartItems.length === 0 ? (
-          <p className="text-gray-500">Your cart is empty.</p>
-        ) : (
-          <div className="space-y-3">
-            {cartItems.map(item => (
-              <div key={item._id} className="flex justify-between items-center">
-                <div>
-                  <p className="font-semibold">{item.name}</p>
-                  <p className="text-sm text-gray-500">{item.quantity} {item.unit} x Rs {item.price.toFixed(2)}</p>
-                </div>
-                <button 
-                  onClick={() => removeFromCart(item._id)} 
-                  className="text-red-500 hover:text-red-700 font-semibold"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-            <hr className="my-4" />
-            <div className="flex justify-between font-bold text-lg">
-              <span>Total:</span>
-              <span>Rs {cartTotal.toFixed(2)}</span>
-            </div>
+      <div className="lg:col-span-1 lg:sticky lg:top-28 self-start">
+        <div className="bg-surface-container-lowest rounded-2xl p-8 shadow-sm">
+          <div className="flex items-center gap-2 mb-6">
+            <span className="material-symbols-outlined text-primary text-2xl">shopping_cart</span>
+            <h2 className="font-headline text-xl font-bold text-on-surface">Your Cart</h2>
           </div>
-        )}
-        
-        {cartItems.length > 0 && (
-          <form onSubmit={handleSubmit} className="mt-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Enter Your Details to Checkout</h3>
-            <div className="space-y-4">
-              <input type="text" placeholder="Your Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md" required />
-              <input type="text" placeholder="Contact Number" value={customerContact} onChange={(e) => setCustomerContact(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md" required />
-              <textarea placeholder="Delivery Address" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md" required />
+          {cartItems.length === 0 ? (
+            <div className="text-center py-10">
+              <span className="material-symbols-outlined text-5xl text-outline/40">remove_shopping_cart</span>
+              <p className="text-on-surface-variant text-sm mt-3">Your cart is empty.</p>
             </div>
-            <button type="submit" className="mt-6 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md">
-              Place Order
-            </button>
-          </form>
-        )}
+          ) : (
+            <div className="space-y-4">
+              {cartItems.map(item => (
+                <div key={item._id} className="flex justify-between items-center p-3 bg-surface-container-low rounded-xl">
+                  <div>
+                    <p className="font-bold text-sm text-on-surface">{item.name}</p>
+                    <p className="text-xs text-on-surface-variant">{item.quantity} {item.unit} × ₹{item.price.toFixed(2)}</p>
+                  </div>
+                  <button
+                    onClick={() => removeFromCart(item._id)}
+                    className="text-error hover:bg-error-container/20 p-1.5 rounded-lg transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg">close</span>
+                  </button>
+                </div>
+              ))}
+              <div className="border-t border-outline-variant/30 pt-4 flex justify-between">
+                <span className="font-headline font-bold text-on-surface">Total</span>
+                <span className="font-headline font-extrabold text-primary text-lg">₹{cartTotal.toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+          
+          {cartItems.length > 0 && (
+            <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+              <div>
+                <span className="font-label text-primary font-bold tracking-widest text-[10px] uppercase">Delivery Details</span>
+              </div>
+              <input type="text" placeholder="Your Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="input-stitch" required />
+              <input type="text" placeholder="Contact Number" value={customerContact} onChange={(e) => setCustomerContact(e.target.value)} className="input-stitch" required />
+              <textarea placeholder="Delivery Address" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} className="input-stitch resize-none" rows={2} required />
+              <button type="submit" className="btn-success w-full">
+                <span className="material-symbols-outlined text-lg">check_circle</span>
+                Place Order
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );

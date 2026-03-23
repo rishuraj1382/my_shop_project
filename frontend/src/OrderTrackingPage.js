@@ -63,63 +63,118 @@ function OrderTrackingPage() {
   };
 
   const statuses = ['Pending', 'Confirmed', 'Packed', 'Ready to Deliver'];
+  const statusIcons = ['schedule', 'check_circle', 'inventory_2', 'local_shipping'];
   const currentStatusIndex = orderDetails ? statuses.indexOf(orderDetails.status) : -1;
 
   return (
-    <div className="flex flex-col items-center min-h-[calc(100vh-200px)] p-4">
-      <div className="w-full max-w-2xl p-8 space-y-6 bg-white rounded-xl shadow-2xl">
-        <h2 className="text-3xl font-bold text-center text-gray-800">Track Your Order</h2>
-        <form onSubmit={handleTrackOrder} className="flex">
-          <input
-            type="text"
-            value={inputId}
-            onChange={(e) => setInputId(e.target.value)}
-            placeholder="Enter Your Order ID"
-            className="flex-grow px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="px-6 py-2 text-white bg-purple-600 rounded-r-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-purple-300 transition duration-300"
-          >
-            {isLoading ? 'Tracking...' : 'Track'}
-          </button>
-        </form>
+    <div className="flex flex-col items-center min-h-[calc(100vh-200px)] p-4 animate-fade-in">
+      <div className="w-full max-w-2xl space-y-8">
+        {/* Hero */}
+        <div className="text-center">
+          <span className="font-label text-primary font-bold tracking-widest text-[10px] uppercase">Live Updates</span>
+          <h1 className="text-4xl md:text-5xl font-headline font-extrabold text-on-surface tracking-tight mt-3">
+            Track Your <span className="text-primary italic">Order</span>
+          </h1>
+        </div>
 
-        {error && <p className="text-red-500 text-center mt-4">{error}</p>}
+        {/* Search Card */}
+        <div className="bg-surface-container-lowest rounded-2xl p-8 shadow-sm">
+          <form onSubmit={handleTrackOrder} className="flex gap-2">
+            <div className="flex-1 relative">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">qr_code</span>
+              <input
+                type="text"
+                value={inputId}
+                onChange={(e) => setInputId(e.target.value)}
+                placeholder="Paste your Order ID here"
+                className="input-stitch pl-12 pr-4"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn-primary px-8"
+            >
+              {isLoading ? (
+                <span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin-slow" />
+              ) : (
+                'Track'
+              )}
+            </button>
+          </form>
+        </div>
+
+        {error && (
+          <div className="flex items-center gap-3 px-5 py-4 rounded-xl bg-error-container text-on-error-container text-sm animate-slide-down">
+            <span className="material-symbols-outlined">error</span>
+            {error}
+          </div>
+        )}
 
         {orderDetails && (
-          <div className="mt-8">
-            <h3 className="text-2xl font-bold text-gray-800">Status for {orderDetails.customerName}</h3>
+          <div className="bg-surface-container-lowest rounded-2xl p-8 shadow-sm animate-scale-in space-y-8">
+            <div>
+              <span className="font-label text-primary font-bold tracking-widest text-[10px] uppercase">Order Status</span>
+              <h3 className="font-headline text-2xl font-bold text-on-surface mt-2">
+                Hi, {orderDetails.customerName}!
+              </h3>
+              <p className="text-on-surface-variant text-sm mt-1">Here's the latest on your order.</p>
+            </div>
             
-            {/* Status Progress Bar */}
-            <div className="mt-6">
-              <div className="flex justify-between">
+            {/* Status Timeline */}
+            <div className="relative">
+              {/* Vertical on mobile, horizontal on desktop */}
+              <div className="flex flex-col md:flex-row gap-0 md:gap-0 justify-between relative">
+                {/* Line connector */}
+                <div className="hidden md:block absolute top-5 left-0 right-0 h-0.5 bg-surface-container-high z-0"></div>
+                <div
+                  className="hidden md:block absolute top-5 left-0 h-0.5 bg-primary transition-all duration-700 z-0"
+                  style={{ width: `${(currentStatusIndex / (statuses.length - 1)) * 100}%` }}
+                ></div>
+
                 {statuses.map((status, index) => (
-                  <div key={status} className="flex-1 text-center">
-                    <div className={`mx-auto w-8 h-8 rounded-full flex items-center justify-center text-white ${index <= currentStatusIndex ? 'bg-green-500' : 'bg-gray-300'}`}>
-                      {index < currentStatusIndex ? '✓' : index + 1}
+                  <div key={status} className="flex md:flex-col items-center md:items-center gap-4 md:gap-3 relative z-10 flex-1">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                        index <= currentStatusIndex
+                          ? 'bg-primary text-white shadow-lg shadow-primary/30'
+                          : 'bg-surface-container-high text-outline'
+                      }`}>
+                        <span className="material-symbols-outlined text-lg">
+                          {index < currentStatusIndex ? 'check' : statusIcons[index]}
+                        </span>
+                      </div>
+                      {/* Vertical line for mobile */}
+                      {index < statuses.length - 1 && (
+                        <div className={`md:hidden w-0.5 h-8 my-1 transition-all duration-300 ${
+                          index < currentStatusIndex ? 'bg-primary' : 'bg-surface-container-high'
+                        }`}></div>
+                      )}
                     </div>
-                    <p className={`mt-2 text-sm ${index <= currentStatusIndex ? 'font-semibold text-gray-800' : 'text-gray-500'}`}>{status}</p>
+                    <p className={`text-xs font-bold text-center transition-colors ${
+                      index <= currentStatusIndex ? 'text-on-surface' : 'text-outline'
+                    }`}>
+                      {status}
+                    </p>
                   </div>
                 ))}
               </div>
-              <div className="relative mt-2">
-                <div className="h-1 bg-gray-300 rounded-full"></div>
-                <div 
-                  className="absolute top-0 left-0 h-1 bg-green-500 rounded-full transition-all duration-500" 
-                  style={{ width: `${(currentStatusIndex / (statuses.length - 1)) * 100}%` }}
-                ></div>
-              </div>
             </div>
 
-            <div className="mt-6 bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-lg">Items in your order:</h4>
-              <ul className="list-disc list-inside mt-2">
+            {/* Order Items */}
+            <div className="bg-surface-container-low rounded-xl p-6">
+              <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-4">Items in your order</h4>
+              <div className="space-y-3">
                 {orderDetails.items.map((item, index) => (
-                  <li key={index}>{item.name} (Quantity: {item.quantity})</li>
+                  <div key={index} className="flex items-center justify-between p-3 bg-surface-container-lowest rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-primary text-lg">shopping_bag</span>
+                      <span className="font-medium text-sm text-on-surface">{item.name}</span>
+                    </div>
+                    <span className="text-on-surface-variant text-sm font-bold">× {item.quantity}</span>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           </div>
         )}

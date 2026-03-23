@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 // UPDATED to include city and pincode
 exports.register = async (req, res) => {
   // Destructure the new fields from the request body
-  const { username, password, shopName, city, pincode } = req.body;
+  const { username, password, shopName, city, pincode, fullAddress, mobileNumber } = req.body;
   try {
     let user = await User.findOne({ username });
     if (user) {
@@ -19,7 +19,7 @@ exports.register = async (req, res) => {
     }
 
     // Add the new fields when creating the new User
-    user = new User({ username, password, shopName, city, pincode });
+    user = new User({ username, password, shopName, city, pincode, fullAddress, mobileNumber });
     await user.save();
 
     const payload = { user: { id: user.id } };

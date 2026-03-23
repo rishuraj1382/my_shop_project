@@ -64,166 +64,138 @@ function RegisterPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-200px)] bg-gradient-to-br from-teal-400 to-blue-600 p-4">
-      <div className="w-full max-w-md p-8 space-y-5 bg-white rounded-2xl shadow-2xl animate-scale-in">
-        {/* Header */}
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-teal-100 mb-3">
-            <span className="text-2xl">🏪</span>
+    <div className="flex items-center justify-center min-h-[calc(100vh-200px)] p-4 animate-fade-in">
+      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        {/* Left: Branding */}
+        <div className="hidden md:block">
+          <h2 className="text-4xl font-headline font-extrabold tracking-tighter leading-tight text-on-surface">
+            Join the <br /><span className="text-primary">Curator Community.</span>
+          </h2>
+          <p className="mt-6 text-on-surface-variant leading-relaxed max-w-sm">
+            Scale your business with our editorial-first marketplace platform. Designed for makers and merchants.
+          </p>
+          <div className="mt-10 flex gap-6">
+            <div className="p-6 bg-surface-container-low rounded-xl flex-1">
+              <span className="material-symbols-outlined text-primary text-3xl mb-4 block">storefront</span>
+              <p className="font-headline font-bold text-sm">Local Reach</p>
+            </div>
+            <div className="p-6 bg-surface-container-low rounded-xl flex-1">
+              <span className="material-symbols-outlined text-primary text-3xl mb-4 block">payments</span>
+              <p className="font-headline font-bold text-sm">Easy Orders</p>
+            </div>
           </div>
-          <h2 className="text-3xl font-extrabold text-gray-800">Register Your Shop</h2>
-          <p className="mt-1 text-sm text-gray-500">Create your shopkeeper account below.</p>
         </div>
 
-        {/* Inline error */}
-        {error && (
-          <div
-            role="alert"
-            className="flex items-center gap-2 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm animate-slide-down"
-          >
-            <span className="text-base font-bold">✕</span>
-            <span>{error}</span>
-          </div>
-        )}
+        {/* Right: Register Form */}
+        <div className="bg-surface-container-lowest p-8 md:p-10 rounded-xl shadow-sm relative overflow-hidden animate-scale-in">
+          {/* Decorative elements */}
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary/5 rounded-full blur-3xl"></div>
 
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-          {/* Username */}
-          <div className="space-y-1">
-            <label className="block text-sm font-semibold text-gray-700">Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="input-animated"
-              placeholder="Choose a username"
-              autoComplete="username"
-              required
-            />
-          </div>
-
-          {/* Shop Name */}
-          <div className="space-y-1">
-            <label className="block text-sm font-semibold text-gray-700">Shop Name</label>
-            <input
-              type="text"
-              value={shopName}
-              onChange={(e) => setShopName(e.target.value)}
-              className="input-animated"
-              placeholder="Your shop's name"
-              required
-            />
-          </div>
-
-          {/* Full Address */}
-          <div className="space-y-1">
-            <label className="block text-sm font-semibold text-gray-700">Full Address</label>
-            <textarea
-              value={fullAddress}
-              onChange={(e) => setFullAddress(e.target.value)}
-              className="input-animated resize-none"
-              placeholder="Street, area, landmark…"
-              rows={2}
-              required
-            />
-          </div>
-
-          {/* City + Pincode side by side */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="block text-sm font-semibold text-gray-700">City</label>
-              <input
-                type="text"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="input-animated"
-                placeholder="City"
-                required
-              />
+          <div className="relative z-10">
+            <div className="mb-8">
+              <h2 className="text-on-surface font-headline font-bold text-2xl mb-1">Open Your Shop</h2>
+              <p className="text-on-surface-variant text-sm">Create your shopkeeper account below.</p>
             </div>
-            <div className="space-y-1">
-              <label className="block text-sm font-semibold text-gray-700">Pincode</label>
-              <input
-                type="text"
-                value={pincode}
-                onChange={(e) => setPincode(e.target.value)}
-                className="input-animated"
-                placeholder="Pincode"
-                required
-              />
-            </div>
-          </div>
 
-          {/* Mobile Number */}
-          <div className="space-y-1">
-            <label className="block text-sm font-semibold text-gray-700">Mobile Number</label>
-            <input
-              type="tel"
-              value={mobileNumber}
-              onChange={(e) => setMobileNumber(e.target.value)}
-              className="input-animated"
-              placeholder="10-digit mobile number"
-              required
-            />
-          </div>
-
-          {/* Password + strength indicator */}
-          <div className="space-y-1">
-            <label className="block text-sm font-semibold text-gray-700">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input-animated"
-              placeholder="Create a strong password"
-              autoComplete="new-password"
-              required
-            />
-            {/* Strength bar */}
-            {password.length > 0 && (
-              <div className="space-y-1 animate-slide-down">
-                <div className="flex gap-1 h-1.5">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div
-                      key={i}
-                      className={`flex-1 rounded-full transition-all duration-300 ${
-                        i <= strength.score ? strength.color : 'bg-gray-200'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <p className={`text-xs font-medium ${strength.score >= 3 ? 'text-green-600' : strength.score >= 2 ? 'text-yellow-600' : 'text-red-500'}`}>
-                  {strength.label}
-                </p>
+            {/* Inline error */}
+            {error && (
+              <div
+                role="alert"
+                className="flex items-center gap-2 px-4 py-3 rounded-lg bg-error-container text-on-error-container text-sm mb-6 animate-slide-down"
+              >
+                <span className="material-symbols-outlined text-lg">error</span>
+                <span>{error}</span>
               </div>
             )}
+
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5" noValidate>
+              {/* Username */}
+              <div className="md:col-span-2">
+                <label className="label-stitch">Username</label>
+                <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="input-stitch" placeholder="Choose a username" autoComplete="username" required />
+              </div>
+
+              {/* Shop Name */}
+              <div className="md:col-span-2">
+                <label className="label-stitch">Shop Name</label>
+                <input type="text" value={shopName} onChange={(e) => setShopName(e.target.value)} className="input-stitch" placeholder="Your shop's name" required />
+              </div>
+
+              {/* Full Address */}
+              <div className="md:col-span-2">
+                <label className="label-stitch">Business Address</label>
+                <textarea value={fullAddress} onChange={(e) => setFullAddress(e.target.value)} className="input-stitch resize-none" placeholder="Street, area, landmark…" rows={2} required />
+              </div>
+
+              {/* City */}
+              <div>
+                <label className="label-stitch">City</label>
+                <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="input-stitch" placeholder="City" required />
+              </div>
+
+              {/* Pincode */}
+              <div>
+                <label className="label-stitch">Pincode</label>
+                <input type="text" value={pincode} onChange={(e) => setPincode(e.target.value)} className="input-stitch" placeholder="799046" required />
+              </div>
+
+              {/* Mobile Number */}
+              <div>
+                <label className="label-stitch">Contact Number</label>
+                <input type="tel" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} className="input-stitch" placeholder="+91 98765 43210" required />
+              </div>
+
+              {/* Password + strength indicator */}
+              <div>
+                <label className="label-stitch">Password</label>
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input-stitch" placeholder="••••••••" autoComplete="new-password" required />
+                {password.length > 0 && (
+                  <div className="space-y-1 mt-2 animate-slide-down">
+                    <div className="flex gap-1 h-1.5">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div
+                          key={i}
+                          className={`flex-1 rounded-full transition-all duration-300 ${
+                            i <= strength.score ? strength.color : 'bg-surface-container-high'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className={`text-xs font-medium ${strength.score >= 3 ? 'text-green-600' : strength.score >= 2 ? 'text-yellow-600' : 'text-red-500'}`}>
+                      {strength.label}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="md:col-span-2 btn-primary w-full mt-2"
+              >
+                {isLoading ? (
+                  <>
+                    <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin-slow" />
+                    Registering…
+                  </>
+                ) : (
+                  'Create Merchant Account'
+                )}
+              </button>
+            </form>
+
+            <p className="text-center text-sm text-on-surface-variant mt-6">
+              Already have an account?{' '}
+              <Link to="/login" className="text-primary font-bold hover:underline">
+                Login here
+              </Link>
+            </p>
           </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="btn-primary w-full !bg-teal-600 hover:!bg-teal-700 focus:!ring-teal-400 mt-2"
-          >
-            {isLoading ? (
-              <>
-                <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin-slow" />
-                Registering…
-              </>
-            ) : (
-              'Register'
-            )}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-gray-500">
-          Already have an account?{' '}
-          <Link to="/login" className="text-teal-600 font-semibold hover:underline">
-            Login here
-          </Link>
-        </p>
+        </div>
       </div>
     </div>
   );
 }
 
 export default RegisterPage;
-
