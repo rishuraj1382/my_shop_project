@@ -40,8 +40,11 @@ function OrderTrackingPage() {
     }
   }, [orderId, setLastTrackedOrderId]);
 
+  const shopId = orderDetails?.shopId;
+
+  // Listen for specific order status updates
   useEffect(() => {
-    if (orderDetails && orderId) {
+    if (orderId) {
       const eventName = `orderUpdate:${orderId}`;
       const handleOrderUpdate = (data) => {
         setOrderDetails(prevDetails => ({ ...prevDetails, status: data.status }));
@@ -51,7 +54,26 @@ function OrderTrackingPage() {
         socket.off(eventName, handleOrderUpdate);
       };
     }
-  }, [orderDetails, orderId]);
+  }, [orderId]);
+
+  // Listen for shop-wide queue updates (e.g. another order finished)
+  useEffect(() => {
+    if (orderId && shopId) {
+      const shopEventName = `shopQueueUpdate:${shopId}`;
+      const handleShopQueueUpdate = async () => {
+        try {
+          const res = await axios.get(`${API_URL}/api/orders/track/${orderId}`);
+          setOrderDetails(res.data);
+        } catch (err) { }
+      };
+
+      socket.on(shopEventName, handleShopQueueUpdate);
+
+      return () => {
+        socket.off(shopEventName, handleShopQueueUpdate);
+      };
+    }
+  }, [orderId, shopId]);
 
   const handleTrackOrder = (e) => {
     e.preventDefault();
@@ -119,6 +141,17 @@ function OrderTrackingPage() {
                 Hi, {orderDetails.customerName}!
               </h3>
               <p className="text-on-surface-variant text-sm mt-1">Here's the latest on your order.</p>
+
+              {/* Queue Position Badge */}
+              {orderDetails.queuePosition > 0 && (
+                <div className="mt-5 inline-flex items-center gap-3 px-5 py-3 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-700 shadow-sm animate-slide-up">
+                  <span className="material-symbols-outlined text-2xl animate-pulse">groups</span>
+                  <div>
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-indigo-500/80">Live Queue</span>
+                    <span className="block text-sm font-medium">You are <span className="text-xl font-extrabold text-indigo-800">#{orderDetails.queuePosition}</span> in line</span>
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Status Timeline */}

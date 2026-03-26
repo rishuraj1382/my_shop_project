@@ -11,6 +11,8 @@ function ProductManager() {
   const [price, setPrice] = useState('');
   const [unit, setUnit] = useState('');
   const [productImage, setProductImage] = useState('');
+  const [quantityType, setQuantityType] = useState('unit');
+  const [quantityOptions, setQuantityOptions] = useState('');
   
   const [isEditing, setIsEditing] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
@@ -33,7 +35,11 @@ function ProductManager() {
   
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const productData = { name, price, unit, productImage };
+    const productData = { 
+      name, price, unit, productImage,
+      quantityType,
+      quantityOptions: quantityOptions ? quantityOptions.split(',').map(o => o.trim()).filter(Boolean) : [],
+    };
     
     try {
       if (isEditing) {
@@ -48,6 +54,16 @@ function ProductManager() {
     } catch (error) {
       console.error("Error in handleSubmit:", error);
       alert('Operation failed. You may not be authorized.');
+    }
+  };
+
+  const handleToggleStock = async (productId) => {
+    try {
+      await axios.put(`${API_URL}/${productId}/toggle-stock`, {}, getConfig());
+      fetchProducts();
+    } catch (error) {
+      console.error("Error toggling stock:", error);
+      alert('Failed to toggle stock status.');
     }
   };
 
@@ -70,6 +86,8 @@ function ProductManager() {
     setPrice(product.price);
     setUnit(product.unit);
     setProductImage(product.productImage);
+    setQuantityType(product.quantityType || 'unit');
+    setQuantityOptions(product.quantityOptions ? product.quantityOptions.join(', ') : '');
   };
 
   const resetForm = () => {
@@ -79,6 +97,8 @@ function ProductManager() {
     setPrice('');
     setUnit('');
     setProductImage('');
+    setQuantityType('unit');
+    setQuantityOptions('');
   };
 
   return (
@@ -132,6 +152,51 @@ function ProductManager() {
                   required 
                 />
               </div>
+
+              {/* Quantity Type Selector */}
+              <div>
+                <label className="label-stitch">Quantity Type</label>
+                <div className="flex bg-surface-container-high rounded-xl p-1">
+                  <button
+                    type="button"
+                    onClick={() => setQuantityType('unit')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+                      quantityType === 'unit'
+                        ? 'bg-white text-primary shadow-sm'
+                        : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-sm">numbers</span>
+                    Unit-based
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuantityType('weight')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+                      quantityType === 'weight'
+                        ? 'bg-white text-primary shadow-sm'
+                        : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-sm">scale</span>
+                    Weight-based
+                  </button>
+                </div>
+              </div>
+
+              {/* Quantity Options */}
+              <div>
+                <label className="label-stitch">Quantity Options</label>
+                <input 
+                  type="text" 
+                  placeholder={quantityType === 'weight' ? 'e.g., 250g, 500g, 1kg' : 'e.g., 1, 2, 3, 5'}
+                  value={quantityOptions} 
+                  onChange={(e) => setQuantityOptions(e.target.value)} 
+                  className="input-stitch"
+                />
+                <p className="text-xs text-outline mt-1 ml-1">Comma-separated values. Leave empty to allow free input.</p>
+              </div>
+
               <div>
                 <label className="label-stitch">Image URL</label>
                 <input 
@@ -181,17 +246,46 @@ function ProductManager() {
               products.map((product, i) => (
                 <div
                   key={product._id}
-                  className="bg-surface-container-lowest rounded-2xl p-5 flex items-center gap-5 hover:shadow-lg transition-all duration-300 animate-slide-up border border-outline-variant/10"
+                  className={`bg-surface-container-lowest rounded-2xl p-5 flex items-center gap-5 hover:shadow-lg transition-all duration-300 animate-slide-up border border-outline-variant/10 ${
+                    !product.inStock ? 'opacity-60' : ''
+                  }`}
                   style={{ animationDelay: `${i * 50}ms` }}
                 >
-                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-surface-container-high flex-shrink-0">
+                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-surface-container-high flex-shrink-0 relative">
                     <img src={product.productImage} alt={product.name} className="w-full h-full object-cover"/>
+                    {!product.inStock && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <span className="text-white text-[8px] font-bold uppercase tracking-wider">Out of Stock</span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-headline font-bold text-on-surface truncate">{product.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-headline font-bold text-on-surface truncate">{product.name}</p>
+                      {product.quantityType === 'weight' && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">WEIGHT</span>
+                      )}
+                    </div>
                     <p className="text-on-surface-variant text-sm">₹{product.price.toFixed(2)} <span className="text-outline">({product.unit})</span></p>
+                    {product.quantityOptions && product.quantityOptions.length > 0 && (
+                      <p className="text-xs text-outline mt-0.5">Options: {product.quantityOptions.join(', ')}</p>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    {/* Stock Toggle */}
+                    <button
+                      onClick={() => handleToggleStock(product._id)}
+                      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none ${
+                        product.inStock ? 'bg-emerald-500' : 'bg-gray-300'
+                      }`}
+                      title={product.inStock ? 'In Stock – Click to mark Out of Stock' : 'Out of Stock – Click to mark In Stock'}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-300 ${
+                          product.inStock ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
                     <button
                       onClick={() => startEdit(product)}
                       className="p-2.5 rounded-xl hover:bg-primary/10 text-primary transition-colors"

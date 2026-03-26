@@ -39,6 +39,7 @@ app.use('/api/shops', require('./routes/shops'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/payment', require('./routes/payment'));
 
 // 6. Set up a basic connection listener for Socket.IO
 io.on('connection', (socket) => {
