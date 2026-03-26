@@ -23,8 +23,17 @@ function LoginPage() {
         password,
       });
       localStorage.setItem('token', res.data.token);
+      localStorage.setItem('role', res.data.role);
+      if (res.data.name) {
+        localStorage.setItem('name', res.data.name);
+      }
       toast({ message: 'Logged in successfully!', type: 'success' });
-      navigate('/admin');
+      // Navigate based on role
+      if (res.data.role === 'shopkeeper') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       const msg =
         err.response?.data?.message || 'Login failed. Please check your credentials.';
@@ -41,7 +50,7 @@ function LoginPage() {
         <div className="space-y-2 text-center">
           <span className="text-primary font-headline font-black text-3xl tracking-tighter">Marketplace</span>
           <h1 className="text-3xl font-headline font-bold mt-4 tracking-tight text-on-surface">Welcome Back</h1>
-          <p className="text-on-surface-variant mt-2 text-sm">Please enter your details to sign in</p>
+          <p className="text-on-surface-variant mt-2 text-sm">Sign in to your account</p>
         </div>
 
         {/* Login Card */}

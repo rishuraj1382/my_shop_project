@@ -1,50 +1,3 @@
-// // backend/models/User.js
-// const mongoose = require('mongoose');
-// const bcrypt = require('bcryptjs');
-
-// const UserSchema = new mongoose.Schema({
-//   username: {
-//     type: String,
-//     required: true,
-//     unique: true,
-//     trim: true,
-//   },
-//   shopName: {
-//     type: String,
-//     required: true,
-//     unique: true,
-//     trim: true,
-//   },
-//   password: {
-//     type: String,
-//     required: true,
-//   },
-//   // ADD THESE NEW LOCATION FIELDS
-//   city: {
-//     type: String,
-//     required: true,
-//     trim: true,
-//   },
-//   pincode: {
-//     type: String,
-//     required: true,
-//     trim: true,
-//   },
-// });
-
-// // This function runs before a user is saved to the database
-// UserSchema.pre('save', async function (next) {
-//   if (!this.isModified('password')) {
-//     return next();
-//   }
-//   const salt = await bcrypt.genSalt(10);
-//   this.password = await bcrypt.hash(this.password, salt);
-//   next();
-// });
-
-// module.exports = mongoose.model('User', UserSchema);
-
-
 // backend/models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -56,35 +9,39 @@ const UserSchema = new mongoose.Schema({
     unique: true,
     trim: true,
   },
-  shopName: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-  },
   password: {
     type: String,
     required: true,
   },
-  city: {
+  role: {
     type: String,
-    required: true,
-    trim: true,
+    enum: ['customer', 'shopkeeper'],
+    default: 'shopkeeper',
   },
-  pincode: {
+  // Customer fields
+  name: {
     type: String,
-    required: true,
-    trim: true,
-  },
-  // ADD THESE NEW FIELDS
-  fullAddress: {
-    type: String,
-    required: true,
     trim: true,
   },
   mobileNumber: {
     type: String,
-    required: true,
+    trim: true,
+  },
+  // Shopkeeper-specific fields (not required for customers)
+  shopName: {
+    type: String,
+    trim: true,
+  },
+  city: {
+    type: String,
+    trim: true,
+  },
+  pincode: {
+    type: String,
+    trim: true,
+  },
+  fullAddress: {
+    type: String,
     trim: true,
   },
   shopImage: {

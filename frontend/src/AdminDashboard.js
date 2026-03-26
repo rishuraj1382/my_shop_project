@@ -97,6 +97,19 @@ function AdminDashboard() {
   const confirmedCount = orders.filter((o) => o.status === 'Confirmed' || o.status === 'Packed').length;
   const doneCount      = orders.filter((o) => o.status === 'Ready to Deliver').length;
 
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  startOfWeek.setHours(0,0,0,0);
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0,0,0,0);
+
+  const totalSales = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  const monthlySales = orders.filter(o => new Date(o.createdAt) >= startOfMonth).reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  const weeklySales = orders.filter(o => new Date(o.createdAt) >= startOfWeek).reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  const todaySales = orders.filter(o => new Date(o.createdAt) >= startOfToday).reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
   return (
     <div className="animate-fade-in">
       {/* Header */}
@@ -108,10 +121,18 @@ function AdminDashboard() {
 
       {/* Stats bar */}
       {!isLoading && orders.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 animate-slide-up">
-          <StatCard label="Pending" value={pendingCount} icon="schedule" bg="bg-yellow-50" color="text-yellow-700" iconColor="text-yellow-500" />
-          <StatCard label="In Progress" value={confirmedCount} icon="sync" bg="bg-blue-50" color="text-blue-700" iconColor="text-blue-500" />
-          <StatCard label="Ready" value={doneCount} icon="check_circle" bg="bg-emerald-50" color="text-emerald-700" iconColor="text-emerald-500" />
+        <div className="space-y-4 mb-10 animate-slide-up">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <StatCard label="Pending Orders" value={pendingCount} icon="schedule" bg="bg-yellow-50" color="text-yellow-700" iconColor="text-yellow-500" />
+            <StatCard label="In Progress" value={confirmedCount} icon="sync" bg="bg-blue-50" color="text-blue-700" iconColor="text-blue-500" />
+            <StatCard label="Ready" value={doneCount} icon="check_circle" bg="bg-emerald-50" color="text-emerald-700" iconColor="text-emerald-500" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard label="Today's Sales" value={`₹${todaySales.toFixed(2)}`} icon="today" bg="bg-sky-50" color="text-sky-700" iconColor="text-sky-500" />
+            <StatCard label="This Week's Sales" value={`₹${weeklySales.toFixed(2)}`} icon="trending_up" bg="bg-indigo-50" color="text-indigo-700" iconColor="text-indigo-500" />
+            <StatCard label="This Month's Sales" value={`₹${monthlySales.toFixed(2)}`} icon="calendar_month" bg="bg-fuchsia-50" color="text-fuchsia-700" iconColor="text-fuchsia-500" />
+            <StatCard label="All-Time Sales" value={`₹${totalSales.toFixed(2)}`} icon="account_balance_wallet" bg="bg-rose-50" color="text-rose-700" iconColor="text-rose-500" />
+          </div>
         </div>
       )}
 
@@ -149,20 +170,30 @@ function AdminDashboard() {
                     </div>
                   </div>
 
-                  {/* Status badge */}
-                  <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${sc.color} mb-4`}>
-                    <span className="material-symbols-outlined text-xs">{sc.icon}</span>
-                    {order.status}
-                  </span>
+                  {/* Status & Payment badges */}
+                  <div className="flex items-center gap-2 mb-4 flex-wrap">
+                    <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${sc.color}`}>
+                      <span className="material-symbols-outlined text-xs">{sc.icon}</span>
+                      {order.status}
+                    </span>
+                    <span className={`inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border ${order.paymentMethod === 'Online' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                      <span className="material-symbols-outlined text-xs">{order.paymentMethod === 'Online' ? 'credit_card' : 'local_shipping'}</span>
+                      {order.paymentMethod || 'COD'}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border bg-surface-container-high text-on-surface border-outline-variant/30">
+                      <span className="material-symbols-outlined text-xs">payments</span>
+                      ₹{order.totalAmount?.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
 
                   {/* Items */}
                   <div className="bg-surface-container-low rounded-xl p-4">
                     <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Items</h4>
-                    <ul className="space-y-1">
+                    <ul className="space-y-1.5 max-h-32 overflow-y-auto pr-2">
                       {order.items.map((item, idx) => (
-                        <li key={idx} className="text-sm text-on-surface flex justify-between">
-                          <span>{item.name}</span>
-                          <span className="text-outline font-medium">× {item.quantity}</span>
+                        <li key={idx} className="text-sm text-on-surface flex justify-between gap-3">
+                          <span className="truncate">{item.name}</span>
+                          <span className="text-outline font-medium whitespace-nowrap">× {item.quantity}</span>
                         </li>
                       ))}
                     </ul>

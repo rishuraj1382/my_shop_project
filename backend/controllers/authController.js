@@ -3,29 +3,57 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// UPDATED to include city and pincode
 exports.register = async (req, res) => {
-  // Destructure the new fields from the request body
-  const { username, password, shopName, city, pincode, fullAddress, mobileNumber } = req.body;
+  const { username, password, role, name, shopName, city, pincode, fullAddress, mobileNumber } = req.body;
+  
   try {
+    // Check if username already exists
     let user = await User.findOne({ username });
     if (user) {
       return res.status(400).json({ message: 'Username already exists' });
     }
-    
-    let shop = await User.findOne({ shopName });
-    if (shop) {
+
+    // If shopkeeper, validate required shopkeeper fields
+    if (role === 'shopkeeper') {
+      if (!shopName || !city || !pincode || !fullAddress || !mobileNumber) {
+        return res.status(400).json({ message: 'All shop details are required for shopkeeper registration' });
+      }
+      // Check if shop name already exists
+      let shop = await User.findOne({ shopName });
+      if (shop) {
         return res.status(400).json({ message: 'Shop name already exists' });
+      }
     }
 
-    // Add the new fields when creating the new User
-    user = new User({ username, password, shopName, city, pincode, fullAddress, mobileNumber });
+    // If customer, validate required customer fields
+    if (role === 'customer') {
+      if (!name || !mobileNumber) {
+        return res.status(400).json({ message: 'Name and mobile number are required for customer registration' });
+      }
+    }
+
+    // Build user object based on role
+    const userData = { username, password, role: role || 'shopkeeper', mobileNumber };
+    
+    if (role === 'customer') {
+      userData.name = name;
+    } else {
+      userData.shopName = shopName;
+      userData.city = city;
+      userData.pincode = pincode;
+      userData.fullAddress = fullAddress;
+      userData.name = name || shopName; // Use shopName as display name if name not provided
+    }
+
+    user = new User(userData);
     await user.save();
 
-    const payload = { user: { id: user.id } };
+    // Include role in JWT payload
+    const payload = { user: { id: user.id, role: user.role } };
     jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' }, (err, token) => {
       if (err) throw err;
-      res.json({ token });
+      const displayName = user.name || user.shopName || user.username;
+      res.json({ token, role: user.role, name: displayName });
     });
   } catch (err) {
     console.error(err.message);
@@ -33,7 +61,6 @@ exports.register = async (req, res) => {
   }
 };
 
-// Login function remains the same
 exports.login = async (req, res) => {
   const { username, password } = req.body;
   try {
@@ -47,10 +74,12 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: 'Invalid Credentials' });
     }
 
-    const payload = { user: { id: user.id } };
+    // Include role in JWT payload
+    const payload = { user: { id: user.id, role: user.role } };
     jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' }, (err, token) => {
       if (err) throw err;
-      res.json({ token });
+      const displayName = user.name || user.shopName || user.username;
+      res.json({ token, role: user.role, name: displayName });
     });
   } catch (err) {
     console.error(err.message);
@@ -58,3 +87,16 @@ exports.login = async (req, res) => {
   }
 };
 
+// NEW: Get current user info
+exports.getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+};

@@ -6,21 +6,26 @@ const {
   createOrder,
   updateOrder,
   deleteOrder,
-  getOrderById, // 1. Import the new function
+  getOrderById,
+  getCustomerOrders,
 } = require('../controllers/orderController');
 const auth = require('../middleware/authMiddleware');
+const authorizeRole = require('../middleware/roleMiddleware');
 
 // PRIVATE: Get orders for the logged-in shopkeeper
-router.get('/', auth, getShopkeeperOrders);
+router.get('/', auth, authorizeRole('shopkeeper'), getShopkeeperOrders);
+
+// PRIVATE: Get orders for the logged-in customer
+router.get('/my-orders', auth, getCustomerOrders);
 
 // PUBLIC: Get a single order for tracking
-router.get('/track/:id', getOrderById); // 2. Add the new public route
+router.get('/track/:id', getOrderById);
 
 // PUBLIC: Customers can create orders
 router.post('/', createOrder);
 
 // PRIVATE: Shopkeepers can update and delete their own orders
-router.put('/:id', auth, updateOrder);
-router.delete('/:id', auth, deleteOrder);
+router.put('/:id', auth, authorizeRole('shopkeeper'), updateOrder);
+router.delete('/:id', auth, authorizeRole('shopkeeper'), deleteOrder);
 
 module.exports = router;
