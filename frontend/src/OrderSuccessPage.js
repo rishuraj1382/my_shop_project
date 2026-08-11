@@ -1,18 +1,19 @@
 // frontend/src/OrderSuccessPage.js
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
+import Button from './components/ui/Button';
 
 function OrderSuccessPage() {
   const { orderId } = useParams();
 
   return (
     <div className="flex items-center justify-center min-h-[60vh] animate-fade-in">
-      <div className="bg-surface-container-lowest rounded-3xl p-10 sm:p-14 text-center max-w-lg w-full shadow-xl shadow-emerald-500/5">
+      <div className="bg-surface-container-lowest rounded-3xl p-10 sm:p-14 text-center max-w-lg w-full shadow-xl shadow-success/10">
         {/* Animated Checkmark */}
         <div className="relative mx-auto w-24 h-24 mb-8">
-          <div className="absolute inset-0 rounded-full bg-emerald-100 animate-ping opacity-30" />
-          <div className="relative flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-400/40 animate-bounce-once">
-            <span className="material-symbols-outlined text-white text-5xl" style={{ fontVariationSettings: "'FILL' 1, 'wght' 600" }}>
+          <div className="absolute inset-0 rounded-full bg-success-container animate-ping opacity-30" />
+          <div className="relative flex items-center justify-center w-24 h-24 rounded-full bg-success shadow-lg shadow-success/30 animate-bounce-once">
+            <span className="material-symbols-outlined text-on-success text-5xl" style={{ fontVariationSettings: "'FILL' 1, 'wght' 600" }}>
               check
             </span>
           </div>
@@ -33,20 +34,12 @@ function OrderSuccessPage() {
 
         {/* Action buttons */}
         <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
-          <Link
-            to={`/track/${orderId}`}
-            className="btn-primary"
-          >
-            <span className="material-symbols-outlined text-lg">local_shipping</span>
+          <Button as={Link} to={`/track/${orderId}`} variant="primary" iconLeft="local_shipping">
             Track Order
-          </Link>
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-bold text-sm text-on-surface-variant bg-surface-container-high hover:bg-surface-container-highest transition-all duration-200"
-          >
-            <span className="material-symbols-outlined text-lg">storefront</span>
+          </Button>
+          <Button as={Link} to="/" variant="secondary" iconLeft="storefront">
             Continue Shopping
-          </Link>
+          </Button>
         </div>
       </div>
     </div>

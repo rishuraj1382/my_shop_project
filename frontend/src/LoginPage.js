@@ -3,6 +3,9 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { useToast } from './Toast';
+import { useAuth } from './contexts/AuthContext';
+import GoogleAuthButton from './components/GoogleAuthButton';
+import Button from './components/ui/Button';
 import { API_URL } from './config';
 
 function LoginPage() {
@@ -10,8 +13,10 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,21 +27,17 @@ function LoginPage() {
         username,
         password,
       });
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('role', res.data.role);
-      if (res.data.name) {
-        localStorage.setItem('name', res.data.name);
-      }
+      login(res.data.token, res.data.role, res.data.name);
       toast({ message: 'Logged in successfully!', type: 'success' });
-      // Navigate based on role
       if (res.data.role === 'shopkeeper') {
         navigate('/admin');
+      } else if (res.data.role === 'superadmin') {
+        navigate('/super-admin');
       } else {
-        navigate('/');
+        navigate('/dashboard');
       }
     } catch (err) {
-      const msg =
-        err.response?.data?.message || 'Login failed. Please check your credentials.';
+      const msg = err.response?.data?.message || 'Login failed. Please check your credentials.';
       setError(msg);
     } finally {
       setIsLoading(false);
@@ -50,7 +51,7 @@ function LoginPage() {
         <div className="space-y-2 text-center">
           <span className="text-primary font-headline font-black text-3xl tracking-tighter">Marketplace</span>
           <h1 className="text-3xl font-headline font-bold mt-4 tracking-tight text-on-surface">Welcome Back</h1>
-          <p className="text-on-surface-variant mt-2 text-sm">Sign in to your account</p>
+          <p className="text-on-surface-variant mt-2 text-sm">Sign in with your username or email</p>
         </div>
 
         {/* Login Card */}
@@ -66,51 +67,56 @@ function LoginPage() {
             </div>
           )}
 
+          <GoogleAuthButton />
+
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-outline-variant" />
+            <span className="text-xs text-on-surface-variant uppercase tracking-wide">or continue with</span>
+            <div className="flex-1 h-px bg-outline-variant" />
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             <div>
-              <label htmlFor="username" className="label-stitch">Username</label>
+              <label htmlFor="username" className="label-stitch">Username or Email</label>
               <input
                 id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="input-stitch"
-                placeholder="Enter your username"
+                placeholder="your@email.com or username"
                 autoComplete="username"
                 required
               />
             </div>
 
             <div>
-              <div className="flex justify-between items-center mb-2 ml-1">
-                <label htmlFor="password" className="text-[0.6875rem] font-medium tracking-widest uppercase text-on-surface-variant">Password</label>
+              <label htmlFor="password" className="label-stitch">Password</label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="input-stitch pr-12"
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(s => !s)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors"
+                  tabIndex={-1}
+                >
+                  <span className="material-symbols-outlined text-lg">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                </button>
               </div>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input-stitch"
-                placeholder="••••••••"
-                autoComplete="current-password"
-                required
-              />
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="btn-primary w-full mt-2"
-            >
-              {isLoading ? (
-                <>
-                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin-slow" />
-                  Signing in…
-                </>
-              ) : (
-                'Login'
-              )}
-            </button>
+            <Button type="submit" variant="primary" loading={isLoading} fullWidth className="mt-2">
+              Login
+            </Button>
           </form>
 
           <div className="mt-8 text-center">

@@ -3,6 +3,12 @@ import React, { useState, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { useToast } from './Toast';
+import { useAuth } from './contexts/AuthContext';
+import LocationPicker from './components/LocationPicker';
+import GoogleAuthButton from './components/GoogleAuthButton';
+import Button from './components/ui/Button';
+import ShopAvatar from './components/ShopAvatar';
+import ShopImageUploadModal from './components/ShopImageUploadModal';
 import { API_URL } from './config';
 
 /* ---------- Password strength helper ---------- */
@@ -14,11 +20,11 @@ function getPasswordStrength(pwd) {
   if (/[0-9]/.test(pwd)) score++;
   if (/[^A-Za-z0-9]/.test(pwd)) score++;
   const levels = [
-    { label: 'Too short', color: 'bg-red-400' },
-    { label: 'Weak', color: 'bg-red-400' },
-    { label: 'Fair', color: 'bg-yellow-400' },
-    { label: 'Good', color: 'bg-blue-400' },
-    { label: 'Strong', color: 'bg-green-500' },
+    { label: 'Too short', color: 'bg-error' },
+    { label: 'Weak', color: 'bg-error' },
+    { label: 'Fair', color: 'bg-warning' },
+    { label: 'Good', color: 'bg-info' },
+    { label: 'Strong', color: 'bg-success' },
   ];
   return { score, ...levels[score] };
 }
@@ -26,6 +32,7 @@ function getPasswordStrength(pwd) {
 function RegisterPage() {
   const [role, setRole] = useState('customer');
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
@@ -34,13 +41,26 @@ function RegisterPage() {
   const [city, setCity] = useState('');
   const [pincode, setPincode] = useState('');
   const [fullAddress, setFullAddress] = useState('');
-  
+  const [location, setLocation] = useState(null);
+  const [shopImageFile, setShopImageFile] = useState(null);
+  const [shopImagePreviewUrl, setShopImagePreviewUrl] = useState(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const toast = useToast();
+  const { login } = useAuth();
 
   const strength = useMemo(() => getPasswordStrength(password), [password]);
+
+  const handleShopImageReady = (file) => {
+    setShopImagePreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+    setShopImageFile(file);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,20 +68,35 @@ function RegisterPage() {
     setIsLoading(true);
     try {
       const payload = { username, password, role, name, mobileNumber };
+      if (email) payload.email = email;
       if (role === 'shopkeeper') {
         payload.shopName = shopName;
         payload.city = city;
         payload.pincode = pincode;
         payload.fullAddress = fullAddress;
+        if (location) payload.location = location;
       }
       const res = await axios.post(`${API_URL}/api/auth/register`, payload);
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('role', res.data.role);
-      if (res.data.name) {
-        localStorage.setItem('name', res.data.name);
+      login(res.data.token, res.data.role, res.data.name);
+
+      // Shop image, if picked, couldn't be uploaded until the account (and its
+      // token) existed — do it now. Best-effort: a failure here shouldn't block
+      // the registration that already succeeded, just surface a toast so the
+      // shopkeeper knows to add it from Shop Settings instead.
+      if (role === 'shopkeeper' && shopImageFile) {
+        try {
+          const formData = new FormData();
+          formData.append('image', shopImageFile);
+          await axios.post(`${API_URL}/api/users/shop/image`, formData, {
+            headers: { 'x-auth-token': res.data.token },
+          });
+        } catch (imgErr) {
+          toast({ message: 'Account created, but the shop photo could not be uploaded. Add it from Shop Settings.', type: 'warning' });
+        }
       }
+
       toast({ message: role === 'shopkeeper' ? 'Shop registered successfully!' : 'Account created successfully!', type: 'success' });
-      navigate(role === 'shopkeeper' ? '/admin' : '/');
+      navigate(role === 'shopkeeper' ? '/admin' : '/dashboard');
     } catch (err) {
       const msg = err.response?.data?.message || 'Registration failed. Please try again.';
       setError(msg);
@@ -122,7 +157,7 @@ function RegisterPage() {
                 onClick={() => setRole('customer')}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all duration-200 ${
                   role === 'customer'
-                    ? 'bg-white text-primary shadow-sm'
+                    ? 'bg-surface-container-lowest text-primary shadow-sm'
                     : 'text-on-surface-variant hover:text-on-surface'
                 }`}
               >
@@ -134,7 +169,7 @@ function RegisterPage() {
                 onClick={() => setRole('shopkeeper')}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all duration-200 ${
                   role === 'shopkeeper'
-                    ? 'bg-white text-primary shadow-sm'
+                    ? 'bg-surface-container-lowest text-primary shadow-sm'
                     : 'text-on-surface-variant hover:text-on-surface'
                 }`}
               >
@@ -142,6 +177,17 @@ function RegisterPage() {
                 Shopkeeper
               </button>
             </div>
+
+            {role === 'customer' && (
+              <>
+                <GoogleAuthButton />
+                <div className="flex items-center gap-3 my-6">
+                  <div className="flex-1 h-px bg-outline-variant" />
+                  <span className="text-xs text-on-surface-variant uppercase tracking-wide">or continue with</span>
+                  <div className="flex-1 h-px bg-outline-variant" />
+                </div>
+              </>
+            )}
 
             {/* Inline error */}
             {error && (
@@ -160,6 +206,13 @@ function RegisterPage() {
                 <label className="label-stitch">Username</label>
                 <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="input-stitch" placeholder="Choose a username" autoComplete="username" required />
               </div>
+
+              {role === 'customer' && (
+                <div className="md:col-span-2">
+                  <label className="label-stitch">Email Address</label>
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-stitch" placeholder="your@email.com (optional)" autoComplete="email" />
+                </div>
+              )}
 
               <div className={role === 'customer' ? 'md:col-span-2' : ''}>
                 <label className="label-stitch">Full Name</label>
@@ -180,8 +233,40 @@ function RegisterPage() {
                   </div>
 
                   <div className="md:col-span-2">
+                    <label className="label-stitch">Shop Image (optional)</label>
+                    <div className="flex items-center gap-4 p-4 rounded-xl bg-surface-container-high">
+                      {shopImagePreviewUrl ? (
+                        <img
+                          src={shopImagePreviewUrl}
+                          alt="Shop preview"
+                          className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <ShopAvatar src={null} alt={shopName} size="md" lazy={false} />
+                      )}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        iconLeft={shopImageFile ? 'edit' : 'add_a_photo'}
+                        onClick={() => setIsImageModalOpen(true)}
+                      >
+                        {shopImageFile ? 'Change Photo' : 'Add Photo'}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-on-surface-variant mt-1.5">
+                      You can also add or change this later from Shop Settings.
+                    </p>
+                  </div>
+
+                  <div className="md:col-span-2">
                     <label className="label-stitch">Business Address</label>
                     <textarea value={fullAddress} onChange={(e) => setFullAddress(e.target.value)} className="input-stitch resize-none" placeholder="Street, area, landmark…" rows={2} required />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="label-stitch">Exact Location (optional)</label>
+                    <LocationPicker value={location} onChange={setLocation} fallbackAddressText={fullAddress} />
                   </div>
 
                   <div>
@@ -212,27 +297,22 @@ function RegisterPage() {
                         />
                       ))}
                     </div>
-                    <p className={`text-xs font-medium ${strength.score >= 3 ? 'text-green-600' : strength.score >= 2 ? 'text-yellow-600' : 'text-red-500'}`}>
+                    <p className={`text-xs font-medium ${strength.score >= 3 ? 'text-success' : strength.score >= 2 ? 'text-warning' : 'text-error'}`}>
                       {strength.label}
                     </p>
                   </div>
                 )}
               </div>
 
-              <button
+              <Button
                 type="submit"
-                disabled={isLoading}
-                className="md:col-span-2 btn-primary w-full mt-2"
+                variant="primary"
+                loading={isLoading}
+                fullWidth
+                className="md:col-span-2 mt-2"
               >
-                {isLoading ? (
-                  <>
-                    <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin-slow" />
-                    Registering…
-                  </>
-                ) : (
-                  role === 'shopkeeper' ? 'Create Merchant Account' : 'Create Customer Account'
-                )}
-              </button>
+                {role === 'shopkeeper' ? 'Create Merchant Account' : 'Create Customer Account'}
+              </Button>
             </form>
 
             <p className="text-center text-sm text-on-surface-variant mt-6">
@@ -244,6 +324,12 @@ function RegisterPage() {
           </div>
         </div>
       </div>
+
+      <ShopImageUploadModal
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        onFileReady={handleShopImageReady}
+      />
     </div>
   );
 }

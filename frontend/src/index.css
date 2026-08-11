@@ -3,6 +3,131 @@
 @tailwind utilities;
 
 /* ------------------------------------------------------------------ */
+/* Design tokens — light (default) and dark, as RGB triplets consumed  */
+/* by tailwind.config.js's color functions (rgb(var(--x) / alpha)).    */
+/* Every background, text and border utility in the app reads these —  */
+/* theme switching never requires touching a single component.          */
+/* ------------------------------------------------------------------ */
+:root {
+  --color-primary: 31 109 76;
+  --color-on-primary: 255 255 255;
+  --color-primary-container: 23 87 61;
+
+  --color-secondary: 91 107 90;
+  --color-on-secondary: 255 255 255;
+  --color-secondary-container: 220 229 216;
+  --color-on-secondary-container: 46 58 45;
+
+  --color-tertiary: 201 122 43;
+  --color-on-tertiary: 255 255 255;
+  --color-tertiary-container: 251 240 227;
+  --color-on-tertiary-container: 122 68 21;
+
+  --color-error: 193 67 43;
+  --color-on-error: 255 255 255;
+  --color-error-container: 251 233 228;
+  --color-on-error-container: 122 39 23;
+
+  --color-success: 46 149 88;
+  --color-on-success: 255 255 255;
+  --color-success-container: 228 245 234;
+  --color-on-success-container: 27 92 54;
+
+  --color-warning: 217 140 29;
+  --color-on-warning: 36 31 22;
+  --color-warning-container: 252 241 222;
+  --color-on-warning-container: 138 90 15;
+
+  --color-info: 46 111 176;
+  --color-on-info: 255 255 255;
+  --color-info-container: 231 240 249;
+  --color-on-info-container: 30 74 115;
+
+  --color-background: 251 248 240;
+  --color-surface: 251 248 240;
+  --color-surface-bright: 253 251 246;
+  --color-surface-dim: 217 207 184;
+  --color-surface-variant: 227 220 201;
+  --color-surface-container-lowest: 255 255 255;
+  --color-surface-container-low: 248 244 236;
+  --color-surface-container: 242 237 225;
+  --color-surface-container-high: 234 227 211;
+  --color-surface-container-highest: 225 216 196;
+  --color-on-surface: 36 31 22;
+  --color-on-background: 36 31 22;
+  --color-on-surface-variant: 94 86 68;
+  --color-outline: 140 131 103;
+  --color-outline-variant: 217 208 188;
+}
+
+/* Dark theme — M3-style role swap: brand/status tones brighten to read on a
+   near-black ground and pair with dark ink ("on-*"); *-container tones invert
+   to dark muted fills paired with a light tint "on-*-container" (spot-verified:
+   on-surface/surface 15:1, primary/on-primary 5.0:1, success-container pair 9.1:1 —
+   the container pattern generalizes structurally across success/warning/error/info/
+   secondary/tertiary, each spot-checked for the same dark-muted+light-tint shape). */
+:root[data-theme="dark"] {
+  --color-primary: 63 163 119;
+  --color-on-primary: 13 40 24;
+  --color-primary-container: 45 122 90;
+
+  --color-secondary: 168 184 160;
+  --color-on-secondary: 35 48 31;
+  --color-secondary-container: 46 58 45;
+  --color-on-secondary-container: 220 229 216;
+
+  --color-tertiary: 224 160 80;
+  --color-on-tertiary: 64 37 5;
+  --color-tertiary-container: 74 46 12;
+  --color-on-tertiary-container: 245 217 174;
+
+  --color-error: 214 69 80;
+  --color-on-error: 53 13 16;
+  --color-error-container: 74 19 25;
+  --color-on-error-container: 245 180 185;
+
+  --color-success: 39 158 107;
+  --color-on-success: 10 38 24;
+  --color-success-container: 22 56 38;
+  --color-on-success-container: 168 230 196;
+
+  --color-warning: 176 132 20;
+  --color-on-warning: 46 34 5;
+  --color-warning-container: 61 46 8;
+  --color-on-warning-container: 240 208 144;
+
+  --color-info: 74 139 201;
+  --color-on-info: 11 32 54;
+  --color-info-container: 20 48 74;
+  --color-on-info-container: 190 220 245;
+
+  --color-background: 23 20 15;
+  --color-surface: 23 20 15;
+  --color-surface-bright: 58 51 39;
+  --color-surface-dim: 16 14 10;
+  --color-surface-variant: 74 66 48;
+  --color-surface-container-lowest: 15 13 9;
+  --color-surface-container-low: 28 24 16;
+  --color-surface-container: 33 29 20;
+  --color-surface-container-high: 44 38 25;
+  --color-surface-container-highest: 56 48 31;
+  --color-on-surface: 237 232 218;
+  --color-on-background: 237 232 218;
+  --color-on-surface-variant: 201 194 172;
+  --color-outline: 143 134 109;
+  --color-outline-variant: 72 65 47;
+}
+
+/* Smooth theme transitions on the properties that actually change,
+   not a blanket `transition: all` (which would fight animate-* utilities). */
+html {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+*, *::before, *::after {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, fill 0.2s ease, stroke 0.2s ease;
+}
+
+/* ------------------------------------------------------------------ */
 /* Accessibility: honour prefers-reduced-motion                         */
 /* ------------------------------------------------------------------ */
 @media (prefers-reduced-motion: reduce) {
@@ -38,7 +163,7 @@
   .input-stitch {
     @apply w-full px-4 py-3 rounded-xl bg-surface-container-high border-none
       text-on-surface text-sm placeholder-outline
-      focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest
+      focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:bg-surface-container-lowest
       transition-all duration-200 outline-none;
   }
 
@@ -47,15 +172,15 @@
     @apply block text-[0.6875rem] font-medium tracking-widest uppercase text-on-surface-variant mb-2 ml-1;
   }
 
-  /* Primary gradient button */
+  /* Primary button */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 py-3 px-6
-      rounded-xl font-bold text-sm text-white
-      bg-gradient-to-br from-primary to-primary-container
+      rounded-xl font-bold text-sm text-on-primary
+      bg-primary hover:bg-primary-container
       shadow-lg shadow-primary/20
       hover:scale-[1.02] active:scale-95
       transition-all duration-200 ease-in-out
-      focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface
       disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100;
   }
 
@@ -65,22 +190,23 @@
       rounded-lg font-semibold text-sm text-error
       hover:bg-error-container/20
       transition-all duration-200 ease-in-out
-      focus:outline-none;
+      focus-visible:outline-none;
   }
 
-  /* Green action button */
+  /* Success action button */
   .btn-success {
     @apply inline-flex items-center justify-center gap-2 py-3 px-6
-      rounded-xl font-bold text-sm text-white
-      bg-emerald-600 hover:bg-emerald-700
-      shadow-lg shadow-emerald-500/20
-      active:scale-95 transition-all duration-200;
+      rounded-xl font-bold text-sm text-on-success
+      bg-success hover:bg-success/90
+      shadow-lg shadow-success/20
+      active:scale-95 transition-all duration-200
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface;
   }
 
   /* Skeleton shimmer block */
   .skeleton {
     @apply bg-surface-container-high rounded-xl;
-    background: linear-gradient(90deg, #e7e8ea 25%, #edeef0 50%, #e7e8ea 75%);
+    background-image: linear-gradient(90deg, rgb(var(--color-surface-container-high)) 25%, rgb(var(--color-surface-container)) 50%, rgb(var(--color-surface-container-high)) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }
@@ -88,13 +214,13 @@
   /* Nav link with active indicator */
   .nav-link {
     @apply relative text-sm font-medium tracking-tight
-      text-slate-600 hover:text-primary
+      text-on-surface-variant hover:text-primary
       transition-colors duration-200;
     font-family: 'Plus Jakarta Sans', sans-serif;
   }
 
   .nav-link.active {
-    @apply text-indigo-700 font-bold border-b-2 border-indigo-600 pb-1;
+    @apply text-primary font-bold border-b-2 border-primary pb-1;
   }
 
   /* Glass nav */

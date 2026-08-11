@@ -8,6 +8,7 @@ const {
   deleteOrder,
   getOrderById,
   getCustomerOrders,
+  cancelOrderByCustomer,
 } = require('../controllers/orderController');
 const auth = require('../middleware/authMiddleware');
 const authorizeRole = require('../middleware/roleMiddleware');
@@ -26,6 +27,7 @@ router.post('/', createOrder);
 
 // PRIVATE: Shopkeepers can update and delete their own orders
 router.put('/:id', auth, authorizeRole('shopkeeper'), updateOrder);
+router.patch('/:id/cancel', auth, authorizeRole('customer'), cancelOrderByCustomer);
 router.delete('/:id', auth, authorizeRole('shopkeeper'), deleteOrder);
 
 module.exports = router;

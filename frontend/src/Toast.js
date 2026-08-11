@@ -42,10 +42,16 @@ export function ToastProvider({ children }) {
 
 function ToastItem({ toast, onDismiss }) {
   const colorMap = {
-    success: 'bg-green-600',
-    error: 'bg-red-500',
-    info: 'bg-indigo-600',
-    warning: 'bg-yellow-500',
+    success: 'bg-success',
+    error: 'bg-error',
+    info: 'bg-info',
+    warning: 'bg-warning',
+  };
+  const textMap = {
+    success: 'text-on-success',
+    error: 'text-on-error',
+    info: 'text-on-info',
+    warning: 'text-on-warning',
   };
   const iconMap = {
     success: '✓',
@@ -57,7 +63,7 @@ function ToastItem({ toast, onDismiss }) {
   return (
     <div
       role="alert"
-      className={`animate-toast-in flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-white text-sm font-medium min-w-[240px] max-w-xs ${colorMap[toast.type] ?? colorMap.info}`}
+      className={`animate-toast-in flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-sm font-medium min-w-[240px] max-w-[calc(100vw-2.5rem)] sm:max-w-xs ${colorMap[toast.type] ?? colorMap.info} ${textMap[toast.type] ?? textMap.info}`}
     >
       <span className="text-base font-bold">{iconMap[toast.type] ?? iconMap.info}</span>
       <span className="flex-1">{toast.message}</span>

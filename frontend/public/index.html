@@ -4,9 +4,24 @@
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/logo.jpg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#4231cf" />
+    <meta name="theme-color" content="#1F6D4C" />
     <meta name="description" content="Marketplace — Find local shops and order products near you" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo.jpg" />
+    <script>
+      // Runs before first paint, before React mounts: sets data-theme synchronously so
+      // there is no flash of the wrong theme. Mirrors the resolution logic in ThemeContext.js.
+      (function () {
+        try {
+          var pref = localStorage.getItem('themePreference') || 'system';
+          var resolved = pref === 'system'
+            ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+            : pref;
+          document.documentElement.setAttribute('data-theme', resolved);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

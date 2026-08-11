@@ -4,9 +4,28 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useOrder } from './OrderContext';
+import Spinner from './components/ui/Spinner';
 import { API_URL } from './config';
 
 const socket = io(API_URL);
+
+const FLOWS = {
+  Delivery: [
+    { status: 'Pending', icon: 'schedule', color: 'text-warning' },
+    { status: 'Confirmed', icon: 'check_circle', color: 'text-info' },
+    { status: 'Packed', icon: 'inventory_2', color: 'text-tertiary' },
+    { status: 'Ready to Deliver', icon: 'local_shipping', color: 'text-success' },
+    { status: 'Out For Delivery', icon: 'directions_bike', color: 'text-info' },
+    { status: 'Delivered', icon: 'done_all', color: 'text-success' },
+  ],
+  Pickup: [
+    { status: 'Pending', icon: 'schedule', color: 'text-warning' },
+    { status: 'Confirmed', icon: 'check_circle', color: 'text-info' },
+    { status: 'Packed', icon: 'inventory_2', color: 'text-tertiary' },
+    { status: 'Ready for Pickup', icon: 'storefront', color: 'text-tertiary' },
+    { status: 'Delivered', icon: 'done_all', color: 'text-success' },
+  ],
+};
 
 function OrderTrackingPage() {
   const { orderId } = useParams();
@@ -50,13 +69,11 @@ function OrderTrackingPage() {
         setOrderDetails(prevDetails => ({ ...prevDetails, status: data.status }));
       };
       socket.on(eventName, handleOrderUpdate);
-      return () => {
-        socket.off(eventName, handleOrderUpdate);
-      };
+      return () => socket.off(eventName, handleOrderUpdate);
     }
   }, [orderId]);
 
-  // Listen for shop-wide queue updates (e.g. another order finished)
+  // Listen for shop-wide queue updates
   useEffect(() => {
     if (orderId && shopId) {
       const shopEventName = `shopQueueUpdate:${shopId}`;
@@ -66,12 +83,8 @@ function OrderTrackingPage() {
           setOrderDetails(res.data);
         } catch (err) { }
       };
-
       socket.on(shopEventName, handleShopQueueUpdate);
-
-      return () => {
-        socket.off(shopEventName, handleShopQueueUpdate);
-      };
+      return () => socket.off(shopEventName, handleShopQueueUpdate);
     }
   }, [orderId, shopId]);
 
@@ -84,9 +97,11 @@ function OrderTrackingPage() {
     navigate(`/track/${inputId}`);
   };
 
-  const statuses = ['Pending', 'Confirmed', 'Packed', 'Ready to Deliver'];
-  const statusIcons = ['schedule', 'check_circle', 'inventory_2', 'local_shipping'];
-  const currentStatusIndex = orderDetails ? statuses.indexOf(orderDetails.status) : -1;
+  const flow = FLOWS[orderDetails?.fulfillmentType] || FLOWS.Delivery;
+  const currentStatusIndex = orderDetails ? flow.findIndex(s => s.status === orderDetails.status) : -1;
+  const isDelivered = orderDetails?.status === 'Delivered';
+  const isPickup = orderDetails?.fulfillmentType === 'Pickup';
+  const isCancelled = orderDetails?.status === 'Cancelled';
 
   return (
     <div className="flex flex-col items-center min-h-[calc(100vh-200px)] p-4 animate-fade-in">
@@ -112,16 +127,8 @@ function OrderTrackingPage() {
                 className="input-stitch pl-12 pr-4"
               />
             </div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="btn-primary px-8"
-            >
-              {isLoading ? (
-                <span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin-slow" />
-              ) : (
-                'Track'
-              )}
+            <button type="submit" disabled={isLoading} className="btn-primary px-8">
+              {isLoading ? <Spinner size="sm" /> : 'Track'}
             </button>
           </form>
         </div>
@@ -135,64 +142,119 @@ function OrderTrackingPage() {
 
         {orderDetails && (
           <div className="bg-surface-container-lowest rounded-2xl p-8 shadow-sm animate-scale-in space-y-8">
+            {/* Delivered celebration */}
+            {isDelivered && (
+              <div className="text-center py-4 animate-bounce-once">
+                <div className="text-6xl mb-2">🎉</div>
+                <h3 className="font-headline font-bold text-2xl text-success">
+                  {isPickup ? 'Order Picked Up!' : 'Order Delivered!'}
+                </h3>
+                <p className="text-on-surface-variant text-sm mt-1">Enjoy your items. Thank you for shopping!</p>
+              </div>
+            )}
+
+            {/* Cancelled banner */}
+            {isCancelled && (
+              <div className="text-center py-4">
+                <span className="material-symbols-outlined text-6xl text-error/60 mb-2 block">cancel</span>
+                <h3 className="font-headline font-bold text-2xl text-error">Order Cancelled</h3>
+                <p className="text-on-surface-variant text-sm mt-1">This order has been cancelled and is no longer being processed.</p>
+              </div>
+            )}
+
             <div>
               <span className="font-label text-primary font-bold tracking-widest text-[10px] uppercase">Order Status</span>
               <h3 className="font-headline text-2xl font-bold text-on-surface mt-2">
                 Hi, {orderDetails.customerName}!
               </h3>
-              <p className="text-on-surface-variant text-sm mt-1">Here's the latest on your order.</p>
+              {orderDetails.shopName && (
+                <p className="text-on-surface-variant text-sm mt-1">
+                  Order from <span className="font-bold text-on-surface">{orderDetails.shopName}</span>
+                </p>
+              )}
 
               {/* Queue Position Badge */}
-              {orderDetails.queuePosition > 0 && (
-                <div className="mt-5 inline-flex items-center gap-3 px-5 py-3 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-700 shadow-sm animate-slide-up">
+              {orderDetails.queuePosition > 0 && !isDelivered && !isCancelled && (
+                <div className="mt-5 inline-flex items-center gap-3 px-5 py-3 bg-info-container border border-info/20 rounded-2xl text-on-info-container shadow-sm animate-slide-up">
                   <span className="material-symbols-outlined text-2xl animate-pulse">groups</span>
                   <div>
-                    <span className="block text-[10px] font-bold uppercase tracking-wider text-indigo-500/80">Live Queue</span>
-                    <span className="block text-sm font-medium">You are <span className="text-xl font-extrabold text-indigo-800">#{orderDetails.queuePosition}</span> in line</span>
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-on-info-container/80">Live Queue</span>
+                    <span className="block text-sm font-medium">
+                      You are <span className="text-xl font-extrabold text-on-info-container">#{orderDetails.queuePosition}</span> in line
+                    </span>
                   </div>
                 </div>
               )}
             </div>
-            
-            {/* Status Timeline */}
-            <div className="relative">
-              {/* Vertical on mobile, horizontal on desktop */}
-              <div className="flex flex-col md:flex-row gap-0 md:gap-0 justify-between relative">
-                {/* Line connector */}
-                <div className="hidden md:block absolute top-5 left-0 right-0 h-0.5 bg-surface-container-high z-0"></div>
-                <div
-                  className="hidden md:block absolute top-5 left-0 h-0.5 bg-primary transition-all duration-700 z-0"
-                  style={{ width: `${(currentStatusIndex / (statuses.length - 1)) * 100}%` }}
-                ></div>
 
-                {statuses.map((status, index) => (
-                  <div key={status} className="flex md:flex-col items-center md:items-center gap-4 md:gap-3 relative z-10 flex-1">
-                    <div className="flex flex-col items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
-                        index <= currentStatusIndex
-                          ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                          : 'bg-surface-container-high text-outline'
-                      }`}>
-                        <span className="material-symbols-outlined text-lg">
-                          {index < currentStatusIndex ? 'check' : statusIcons[index]}
-                        </span>
-                      </div>
-                      {/* Vertical line for mobile */}
-                      {index < statuses.length - 1 && (
-                        <div className={`md:hidden w-0.5 h-8 my-1 transition-all duration-300 ${
-                          index < currentStatusIndex ? 'bg-primary' : 'bg-surface-container-high'
-                        }`}></div>
-                      )}
+            {/* Status Timeline */}
+            {!isCancelled && (
+            <div className="relative">
+              {/* Desktop: Horizontal timeline */}
+              <div className="hidden md:flex justify-between relative">
+                {/* Background line */}
+                <div className="absolute top-5 left-0 right-0 h-0.5 bg-surface-container-high z-0" />
+                {/* Progress line */}
+                <div
+                  className="absolute top-5 left-0 h-0.5 bg-primary transition-all duration-700 ease-out z-0"
+                  style={{ width: `${Math.max(0, (currentStatusIndex / (flow.length - 1)) * 100)}%` }}
+                />
+
+                {flow.map((step, index) => (
+                  <div key={step.status} className="flex flex-col items-center gap-3 relative z-10 flex-1">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 shadow-sm ${
+                      index <= currentStatusIndex
+                        ? 'bg-primary text-on-primary shadow-primary/30'
+                        : 'bg-surface-container-high text-outline'
+                    }`}>
+                      <span className="material-symbols-outlined text-lg">
+                        {index < currentStatusIndex ? 'check' : step.icon}
+                      </span>
                     </div>
-                    <p className={`text-xs font-bold text-center transition-colors ${
+                    <p className={`text-[10px] font-bold text-center transition-colors ${
                       index <= currentStatusIndex ? 'text-on-surface' : 'text-outline'
                     }`}>
-                      {status}
+                      {step.status}
                     </p>
                   </div>
                 ))}
               </div>
+
+              {/* Mobile: Vertical timeline */}
+              <div className="md:hidden space-y-0">
+                {flow.map((step, index) => (
+                  <div key={step.status} className="flex items-start gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 flex-shrink-0 ${
+                        index <= currentStatusIndex
+                          ? 'bg-primary text-on-primary shadow-lg shadow-primary/30'
+                          : 'bg-surface-container-high text-outline'
+                      }`}>
+                        <span className="material-symbols-outlined text-lg">
+                          {index < currentStatusIndex ? 'check' : step.icon}
+                        </span>
+                      </div>
+                      {index < flow.length - 1 && (
+                        <div className={`w-0.5 h-8 my-1 transition-all duration-500 ${
+                          index < currentStatusIndex ? 'bg-primary' : 'bg-surface-container-high'
+                        }`} />
+                      )}
+                    </div>
+                    <div className="pt-2 pb-6">
+                      <p className={`text-sm font-bold transition-colors ${
+                        index <= currentStatusIndex ? 'text-on-surface' : 'text-outline'
+                      }`}>
+                        {step.status}
+                      </p>
+                      {index === currentStatusIndex && (
+                        <p className={`text-xs mt-0.5 font-medium ${step.color}`}>Current status</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
+            )}
 
             {/* Order Items */}
             <div className="bg-surface-container-low rounded-xl p-6">
@@ -208,6 +270,12 @@ function OrderTrackingPage() {
                   </div>
                 ))}
               </div>
+              {orderDetails.totalAmount && (
+                <div className="mt-4 pt-4 border-t border-outline-variant/30 flex justify-between">
+                  <span className="font-bold text-on-surface">Total</span>
+                  <span className="font-extrabold text-primary">₹{orderDetails.totalAmount?.toFixed(2)}</span>
+                </div>
+              )}
             </div>
           </div>
         )}
