@@ -5,10 +5,52 @@ const Order = require('../models/Order');
 const User = require('../models/User');
 const emailService = require('../services/emailService');
 
-const razorpayInstance = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+// ---------------------------------------------------------------------------
+// Razorpay is OPTIONAL. The server starts and COD works normally even when
+// RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET are absent or still set to their
+// placeholder values. Online payments become available automatically once real
+// credentials are added to the environment — no code change required.
+// ---------------------------------------------------------------------------
+
+/** Placeholder strings written in .env.example / .env template files. */
+const PLACEHOLDER_VALUES = new Set([
+  'your-razorpay-key-id',
+  'your-razorpay-key-secret',
+  'rzp_test_YOUR_KEY_ID_HERE',
+  'YOUR_KEY_SECRET_HERE',
+]);
+
+/**
+ * Returns true only when both Razorpay env vars are present and contain real
+ * (non-placeholder) values. Call this at request time, not at module load.
+ */
+const isRazorpayConfigured = () => {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  return (
+    keyId && keyId.trim() !== '' && !PLACEHOLDER_VALUES.has(keyId.trim()) &&
+    keySecret && keySecret.trim() !== '' && !PLACEHOLDER_VALUES.has(keySecret.trim())
+  );
+};
+
+/** Lazy singleton — only instantiated when credentials are actually present. */
+let _razorpayInstance = null;
+const getRazorpayInstance = () => {
+  if (!_razorpayInstance) {
+    _razorpayInstance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+  }
+  return _razorpayInstance;
+};
+
+// Log once at startup so the deployment logs make the status clear.
+if (isRazorpayConfigured()) {
+  console.log('[Payment] Razorpay credentials detected. Online payments enabled.');
+} else {
+  console.warn('[Payment] Razorpay credentials not configured. Online payments disabled.');
+}
 
 // Helper: fetch shop name
 const getShopName = async (shopId) => {
@@ -20,6 +62,12 @@ const getShopName = async (shopId) => {
 
 // POST /api/payment/create-order
 const createRazorpayOrder = async (req, res) => {
+  // Guard: return a clear error if Razorpay credentials are not configured.
+  if (!isRazorpayConfigured()) {
+    return res.status(503).json({
+      message: 'Online payments are not available. Please use Cash on Delivery.',
+    });
+  }
   try {
     const { amount, shopId } = req.body;
     if (!amount || amount <= 0) {
@@ -37,7 +85,7 @@ const createRazorpayOrder = async (req, res) => {
       currency: 'INR',
       receipt: `receipt_${Date.now()}`,
     };
-    const razorpayOrder = await razorpayInstance.orders.create(options);
+    const razorpayOrder = await getRazorpayInstance().orders.create(options);
     res.json({
       orderId: razorpayOrder.id,
       amount: razorpayOrder.amount,
@@ -52,6 +100,12 @@ const createRazorpayOrder = async (req, res) => {
 
 // POST /api/payment/verify-payment
 const verifyPayment = async (req, res) => {
+  // Guard: a payment can only be verified when Razorpay is configured.
+  if (!isRazorpayConfigured()) {
+    return res.status(503).json({
+      message: 'Online payments are not available. Please use Cash on Delivery.',
+    });
+  }
   try {
     const {
       razorpay_order_id, razorpay_payment_id, razorpay_signature, orderData,
