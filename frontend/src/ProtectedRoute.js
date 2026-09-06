@@ -12,7 +12,7 @@ function ProtectedRoute({ children, requiredRole }) {
 
   // If a specific role is required, check it
   if (requiredRole && role !== requiredRole) {
-    return <Navigate to="/" />;
+    return <Navigate to="/unauthorized" />;
   }
 
   return children;

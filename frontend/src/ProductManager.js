@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { API_URL as BASE_URL } from './config';
+import Badge from './components/ui/Badge';
+import EmptyState from './components/ui/EmptyState';
 
 const API_URL = `${BASE_URL}/api/products`;
 
@@ -106,7 +108,7 @@ function ProductManager() {
       {/* Header */}
       <div className="mb-10">
         <span className="font-label text-primary font-bold tracking-widest text-[10px] uppercase">Inventory</span>
-        <h1 className="text-4xl font-headline font-extrabold text-on-surface tracking-tight mt-2">Product Manager</h1>
+        <h1 className="text-4xl md:text-5xl font-headline font-extrabold text-on-surface tracking-tight mt-2">Product Manager</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -162,7 +164,7 @@ function ProductManager() {
                     onClick={() => setQuantityType('unit')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 ${
                       quantityType === 'unit'
-                        ? 'bg-white text-primary shadow-sm'
+                        ? 'bg-surface-container-lowest text-primary shadow-sm'
                         : 'text-on-surface-variant hover:text-on-surface'
                     }`}
                   >
@@ -174,7 +176,7 @@ function ProductManager() {
                     onClick={() => setQuantityType('weight')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 ${
                       quantityType === 'weight'
-                        ? 'bg-white text-primary shadow-sm'
+                        ? 'bg-surface-container-lowest text-primary shadow-sm'
                         : 'text-on-surface-variant hover:text-on-surface'
                     }`}
                   >
@@ -237,11 +239,7 @@ function ProductManager() {
           </div>
           <div className="space-y-4">
             {products.length === 0 ? (
-              <div className="text-center py-20 animate-fade-in">
-                <span className="material-symbols-outlined text-6xl text-outline/30">category</span>
-                <p className="text-on-surface-variant text-lg font-medium mt-4">No products yet.</p>
-                <p className="text-outline text-sm mt-1">Add your first product using the form.</p>
-              </div>
+              <EmptyState icon="category" title="No products yet." description="Add your first product using the form." />
             ) : (
               products.map((product, i) => (
                 <div
@@ -255,7 +253,7 @@ function ProductManager() {
                     <img src={product.productImage} alt={product.name} className="w-full h-full object-cover"/>
                     {!product.inStock && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <span className="text-white text-[8px] font-bold uppercase tracking-wider">Out of Stock</span>
+                        <Badge variant="danger" size="sm">Out of Stock</Badge>
                       </div>
                     )}
                   </div>
@@ -263,7 +261,7 @@ function ProductManager() {
                     <div className="flex items-center gap-2">
                       <p className="font-headline font-bold text-on-surface truncate">{product.name}</p>
                       {product.quantityType === 'weight' && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">WEIGHT</span>
+                        <Badge variant="warm" icon="scale" size="sm">Weight</Badge>
                       )}
                     </div>
                     <p className="text-on-surface-variant text-sm">₹{product.price.toFixed(2)} <span className="text-outline">({product.unit})</span></p>
@@ -275,11 +273,14 @@ function ProductManager() {
                     {/* Stock Toggle */}
                     <button
                       onClick={() => handleToggleStock(product._id)}
-                      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none ${
-                        product.inStock ? 'bg-emerald-500' : 'bg-gray-300'
+                      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-container-lowest ${
+                        product.inStock ? 'bg-success' : 'bg-surface-container-highest'
                       }`}
                       title={product.inStock ? 'In Stock – Click to mark Out of Stock' : 'Out of Stock – Click to mark In Stock'}
                     >
+                      {/* Thumb intentionally stays literal white in both themes — a switch
+                          thumb needs to read as "light" against either track color, the
+                          same reasoning as Modal's backdrop scrim staying literal black. */}
                       <span
                         className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-300 ${
                           product.inStock ? 'translate-x-6' : 'translate-x-1'

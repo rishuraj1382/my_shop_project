@@ -2,6 +2,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import LocationPicker from './components/LocationPicker';
+import ShopAvatar, { hasRealShopImage } from './components/ShopAvatar';
+import ShopImageUploadModal from './components/ShopImageUploadModal';
+import Button from './components/ui/Button';
+import { useToast } from './Toast';
 import { API_URL as BASE_URL } from './config';
 
 const API_URL = `${BASE_URL}/api/users/shop`;
@@ -14,9 +19,13 @@ function ShopSettingsPage() {
     pincode: '',
     mobileNumber: '',
     shopImage: '',
+    location: null,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [isRemovingImage, setIsRemovingImage] = useState(false);
   const navigate = useNavigate();
+  const toast = useToast();
 
   const getConfig = useCallback(() => ({
     headers: { 'x-auth-token': localStorage.getItem('token') }
@@ -33,6 +42,7 @@ function ShopSettingsPage() {
           pincode: res.data.pincode || '',
           mobileNumber: res.data.mobileNumber || '',
           shopImage: res.data.shopImage || '',
+          location: res.data.location || null,
         });
       } catch (error) {
         console.error("Failed to fetch shop details:", error);
@@ -46,6 +56,25 @@ function ShopSettingsPage() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleImageSaved = (newShopImage) => {
+    setFormData(prev => ({ ...prev, shopImage: newShopImage }));
+    toast({ message: 'Shop image updated!', type: 'success' });
+  };
+
+  const handleRemoveImage = async () => {
+    if (!window.confirm('Remove your shop photo? Customers will see a placeholder until you upload a new one.')) return;
+    setIsRemovingImage(true);
+    try {
+      const res = await axios.delete(`${BASE_URL}/api/users/shop/image`, getConfig());
+      setFormData(prev => ({ ...prev, shopImage: res.data.shopImage }));
+      toast({ message: 'Shop image removed.', type: 'info' });
+    } catch (error) {
+      toast({ message: error.response?.data?.message || 'Failed to remove shop image.', type: 'error' });
+    } finally {
+      setIsRemovingImage(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -91,7 +120,15 @@ function ShopSettingsPage() {
               <label className="label-stitch">Full Address</label>
               <textarea name="fullAddress" value={formData.fullAddress} onChange={handleChange} className="input-stitch resize-none" rows={2} required />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label-stitch">Exact Location (optional)</label>
+              <LocationPicker
+                value={formData.location}
+                onChange={(loc) => setFormData(prev => ({ ...prev, location: loc }))}
+                fallbackAddressText={formData.fullAddress}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label-stitch">City</label>
                 <input name="city" value={formData.city} onChange={handleChange} className="input-stitch" required />
@@ -106,8 +143,33 @@ function ShopSettingsPage() {
               <input name="mobileNumber" value={formData.mobileNumber} onChange={handleChange} className="input-stitch" required />
             </div>
             <div>
-              <label className="label-stitch">Shop Image URL</label>
-              <input name="shopImage" value={formData.shopImage} onChange={handleChange} className="input-stitch" />
+              <label className="label-stitch">Shop Image</label>
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-surface-container-high">
+                <ShopAvatar src={formData.shopImage} alt={formData.shopName} size="lg" lazy={false} />
+                <div className="flex flex-col gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    iconLeft="edit"
+                    onClick={() => setIsImageModalOpen(true)}
+                  >
+                    Change Image
+                  </Button>
+                  {hasRealShopImage(formData.shopImage) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      iconLeft="delete"
+                      onClick={handleRemoveImage}
+                      loading={isRemovingImage}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
             <button type="submit" className="btn-success w-full mt-4">
               <span className="material-symbols-outlined text-lg">save</span>
@@ -116,6 +178,12 @@ function ShopSettingsPage() {
           </form>
         </div>
       </div>
+
+      <ShopImageUploadModal
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        onSaved={handleImageSaved}
+      />
     </div>
   );
 }

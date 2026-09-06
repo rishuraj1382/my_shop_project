@@ -10,7 +10,7 @@ const OrderSchema = new mongoose.Schema({
     quantity: Number,
     price: Number,
     unit: String,
-    selectedOption: String, // NEW: the selected quantity option (e.g., "500g" or "2 pieces")
+    selectedOption: String,
   }],
   totalAmount: {
     type: Number,
@@ -34,20 +34,34 @@ const OrderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Pending', 'Confirmed', 'Packed', 'Ready to Deliver'],
+    enum: ['Pending', 'Confirmed', 'Packed', 'Ready to Deliver', 'Out For Delivery', 'Ready for Pickup', 'Delivered', 'Cancelled'],
     default: 'Pending',
+  },
+  fulfillmentType: {
+    type: String,
+    enum: ['Delivery', 'Pickup'],
+    default: 'Delivery',
   },
   shop: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
   },
-  // NEW: Link to logged-in customer for order history
+  // Denormalized shop name for faster customer order queries
+  shopName: {
+    type: String,
+    trim: true,
+  },
+  // Link to logged-in customer for order history
   customer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
   createdAt: { type: Date, default: Date.now },
 });
+
+// Index for customer order queries
+OrderSchema.index({ customer: 1, createdAt: -1 });
+OrderSchema.index({ shop: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Order', OrderSchema);

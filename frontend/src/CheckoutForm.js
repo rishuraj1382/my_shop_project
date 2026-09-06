@@ -1,20 +1,29 @@
 // frontend/src/CheckoutForm.js
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import ShopMapView from './components/ShopMapView';
+import ShopAvatar from './components/ShopAvatar';
 import { API_URL } from './config';
+import Card from './components/ui/Card';
+import Badge from './components/ui/Badge';
+import Button from './components/ui/Button';
+import EmptyState from './components/ui/EmptyState';
+import Spinner from './components/ui/Spinner';
 
 function CheckoutForm() {
   const { shopId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [products, setProducts] = useState([]);
+  const [shop, setShop] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [customerName, setCustomerName] = useState(localStorage.getItem('savedCustomerName') || '');
   const [customerContact, setCustomerContact] = useState(localStorage.getItem('savedCustomerContact') || '');
   const [customerAddress, setCustomerAddress] = useState(localStorage.getItem('savedCustomerAddress') || '');
   const [searchTerm, setSearchTerm] = useState('');
   const [quantities, setQuantities] = useState({});
-  const [selectedOptions, setSelectedOptions] = useState({});
+  const [fulfillmentType, setFulfillmentType] = useState('Delivery');
   const [paymentMethod, setPaymentMethod] = useState('COD');
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -27,11 +36,23 @@ function CheckoutForm() {
     }
   }, [shopId]);
 
+  const fetchShop = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/shops/${shopId}`);
+      setShop(res.data);
+    } catch (error) {
+      console.error("Error fetching shop details:", error);
+    }
+  }, [shopId]);
+
   useEffect(() => {
     if (shopId) {
       fetchProducts();
+      fetchShop();
     }
-  }, [shopId, fetchProducts]);
+  }, [shopId, fetchProducts, fetchShop]);
+
+  const isShopClosed = shop?.isOpen === false;
 
   // Fetch logged-in user details to auto-fill (overrides localStorage if logged in)
   useEffect(() => {
@@ -56,6 +77,37 @@ function CheckoutForm() {
     fetchUserDetails();
   }, []);
 
+  // Handle pre-filled products from navigation state (Buy Now, Add to Cart from Search, Reorder)
+  useEffect(() => {
+    if (!products.length) return;
+    const state = location.state;
+    if (!state) return;
+
+    if (state.buyNowProduct) {
+      // Buy Now: go straight to checkout with 1 item
+      const p = state.buyNowProduct;
+      const cartItem = {
+        id: p._id, name: p.name, price: p.price, unit: p.unit,
+        quantity: 1, selectedOption: '',
+      };
+      setCartItems([cartItem]);
+    } else if (state.preAddProduct) {
+      // Add to Cart from global search
+      const p = state.preAddProduct;
+      const match = products.find(prod => prod._id === p._id);
+      if (match) addToCart(match, 1);
+    } else if (state.reorderItems) {
+      // Reorder: re-add all items from a previous order
+      state.reorderItems.forEach(item => {
+        const match = products.find(p => p.name === item.name);
+        if (match) addToCart(match, item.quantity || 1);
+      });
+    }
+    // Clear state so re-renders don't re-add
+    navigate(location.pathname, { replace: true, state: null });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products]);
+
   // Load Razorpay checkout script
   useEffect(() => {
     const script = document.createElement('script');
@@ -71,12 +123,9 @@ function CheckoutForm() {
     setQuantities({ ...quantities, [productId]: value });
   };
 
-  const handleOptionChange = (productId, value) => {
-    setSelectedOptions({ ...selectedOptions, [productId]: value });
-  };
 
   const addToCart = (productToAdd, overrideQuantity = null) => {
-    if (!productToAdd.inStock) return;
+    if (!productToAdd.inStock || isShopClosed) return;
     
     let quantityToAdd;
     
@@ -133,7 +182,10 @@ function CheckoutForm() {
     const data = {
       customerName,
       customerContact,
-      customerAddress,
+      customerAddress: fulfillmentType === 'Pickup'
+        ? (customerAddress.trim() || `Self-pickup — ${shop?.shopName || 'in-store'}`)
+        : customerAddress,
+      fulfillmentType,
       items: cartItems.map(item => ({
         name: item.name,
         quantity: item.quantity,
@@ -166,7 +218,7 @@ function CheckoutForm() {
       navigate(`/order-success/${res.data.order._id}`);
     } catch (error) {
       console.error('Error placing COD order:', error);
-      alert('Failed to place order. Please try again.');
+      alert(error.response?.data?.message || 'Failed to place order. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -179,6 +231,7 @@ function CheckoutForm() {
 
       const { data } = await axios.post(`${API_URL}/api/payment/create-order`, {
         amount: cartTotal,
+        shopId,
       });
 
       const options = {
@@ -207,7 +260,7 @@ function CheckoutForm() {
           contact: customerContact,
         },
         theme: {
-          color: '#6366f1',
+          color: '#1F6D4C',
         },
         modal: {
           ondismiss: function () {
@@ -224,7 +277,7 @@ function CheckoutForm() {
       rzp.open();
     } catch (error) {
       console.error('Error initiating payment:', error);
-      alert('Failed to initiate payment. Please try again.');
+      alert(error.response?.data?.message || 'Failed to initiate payment. Please try again.');
       setIsProcessing(false);
     }
   };
@@ -233,6 +286,11 @@ function CheckoutForm() {
     e.preventDefault();
     if (cartItems.length === 0) {
       alert('Your cart is empty. Please add items first.');
+      return;
+    }
+
+    if (isShopClosed) {
+      alert('This shop is currently closed. You can browse products, but ordering is temporarily unavailable.');
       return;
     }
 
@@ -256,6 +314,20 @@ function CheckoutForm() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
       {/* Products Section */}
       <div className="lg:col-span-2">
+        {shop && (
+          <div className="mb-8 p-6 bg-surface-container-lowest rounded-2xl shadow-sm animate-slide-up">
+            <div className="flex items-center gap-4">
+              <ShopAvatar src={shop.shopImage} alt={shop.shopName} size="lg" lazy={false} />
+              <div>
+                <h1 className="font-headline text-2xl font-bold text-on-surface">{shop.shopName}</h1>
+                <p className="text-on-surface-variant text-sm mt-1">{shop.fullAddress}</p>
+              </div>
+            </div>
+            <div className="mt-4">
+              <ShopMapView shopName={shop.shopName} fullAddress={shop.fullAddress} location={shop.location} />
+            </div>
+          </div>
+        )}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-10">
           <div>
             <span className="font-label text-primary font-bold tracking-widest text-[10px] uppercase">Catalog</span>
@@ -272,13 +344,23 @@ function CheckoutForm() {
             />
           </div>
         </div>
+        {isShopClosed && (
+          <div className="mb-6 p-4 rounded-2xl bg-error-container flex items-center gap-3 animate-slide-down">
+            <span className="material-symbols-outlined text-on-error-container">storefront</span>
+            <p className="text-on-error-container text-sm font-medium">
+              This shop is currently closed. You can browse products, but ordering is temporarily unavailable.
+            </p>
+          </div>
+        )}
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
           {filteredProducts.map((product, i) => {
             const isOutOfStock = product.inStock === false;
             return (
-              <div
+              <Card
                 key={product._id}
-                className={`bg-surface-container-lowest rounded-2xl overflow-hidden group hover:shadow-xl transition-all duration-300 flex flex-col animate-slide-up ${
+                as="article"
+                padding="none"
+                className={`overflow-hidden group hover:shadow-xl transition-all duration-300 flex flex-col animate-slide-up ${
                   isOutOfStock ? 'opacity-70' : ''
                 }`}
                 style={{ animationDelay: `${i * 60}ms` }}
@@ -293,16 +375,14 @@ function CheckoutForm() {
                   />
                   {isOutOfStock && (
                     <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                      <span className="bg-red-600 text-white text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-lg text-center">
+                      <Badge variant="danger" size="sm" className="uppercase tracking-wider shadow-lg">
                         Out of Stock
-                      </span>
+                      </Badge>
                     </div>
                   )}
                   {product.quantityType === 'weight' && !isOutOfStock && (
                     <div className="absolute top-2 right-2">
-                      <span className="bg-amber-500 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
-                        ⚖ Weight
-                      </span>
+                      <Badge variant="warm" icon="scale" size="sm" className="shadow-md">Weight</Badge>
                     </div>
                   )}
                 </div>
@@ -314,28 +394,26 @@ function CheckoutForm() {
                   
                   <div className="mt-auto pt-2">
                     {product.quantityType === 'weight' ? (
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                         <input
                           type="number"
                           min="0.1"
                           step="0.1"
                           placeholder="Kg"
-                          className="w-14 sm:w-16 px-2 py-2 rounded-xl bg-surface-container-high border-none text-xs sm:text-sm text-on-surface focus:ring-2 focus:ring-primary/20 outline-none"
+                          className="w-full sm:w-16 px-2 py-2 rounded-xl bg-surface-container-high border-none text-xs sm:text-sm text-on-surface focus:ring-2 focus:ring-primary/20 outline-none"
                           onChange={(e) => handleQuantityChange(product._id, e.target.value)}
                           value={quantities[product._id] || ''}
-                          disabled={isOutOfStock}
+                          disabled={isOutOfStock || isShopClosed}
                         />
-                        <button
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          disabled={isOutOfStock || isShopClosed || !quantities[product._id]}
                           onClick={() => addToCart(product)}
-                          disabled={isOutOfStock || !quantities[product._id]}
-                          className={`flex-1 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-md ${
-                            isOutOfStock || !quantities[product._id]
-                              ? 'bg-surface-container text-outline cursor-not-allowed shadow-none'
-                              : 'bg-primary text-on-primary hover:bg-primary-container active:scale-95 shadow-primary/20'
-                          }`}
+                          className="sm:flex-1"
                         >
                           Add
-                        </button>
+                        </Button>
                       </div>
                     ) : (
                       (() => {
@@ -343,30 +421,28 @@ function CheckoutForm() {
                         if (cartItem && !isOutOfStock) {
                           return (
                             <div className="flex items-center justify-between w-full bg-primary text-on-primary rounded-xl overflow-hidden shadow-primary/20 shadow-md">
-                              <button onClick={() => updateCartQuantity(cartItem._id, -1)} className="w-1/3 py-2 text-sm font-black hover:bg-white/20 active:bg-white/30 transition-colors">-</button>
+                              <button onClick={() => updateCartQuantity(cartItem._id, -1)} disabled={isShopClosed} className="w-1/3 py-2 text-sm font-black hover:bg-on-primary/20 active:bg-on-primary/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">-</button>
                               <span className="w-1/3 text-center text-sm font-bold">{cartItem.quantity}</span>
-                              <button onClick={() => updateCartQuantity(cartItem._id, 1)} className="w-1/3 py-2 text-sm font-black hover:bg-white/20 active:bg-white/30 transition-colors">+</button>
+                              <button onClick={() => updateCartQuantity(cartItem._id, 1)} disabled={isShopClosed} className="w-1/3 py-2 text-sm font-black hover:bg-on-primary/20 active:bg-on-primary/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">+</button>
                             </div>
                           );
                         }
                         return (
-                          <button
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            disabled={isOutOfStock || isShopClosed}
                             onClick={() => addToCart(product, 1)}
-                            disabled={isOutOfStock}
-                            className={`w-full py-2 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-md ${
-                              isOutOfStock
-                                ? 'bg-surface-container text-outline cursor-not-allowed shadow-none'
-                                : 'bg-primary text-on-primary border border-primary hover:bg-primary-container active:scale-95 shadow-primary/20'
-                            }`}
+                            fullWidth
                           >
                             Add to Cart
-                          </button>
+                          </Button>
                         );
                       })()
                     )}
                   </div>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
@@ -380,10 +456,7 @@ function CheckoutForm() {
             <h2 className="font-headline text-xl font-bold text-on-surface">Your Cart</h2>
           </div>
           {cartItems.length === 0 ? (
-            <div className="text-center py-10">
-              <span className="material-symbols-outlined text-5xl text-outline/40">remove_shopping_cart</span>
-              <p className="text-on-surface-variant text-sm mt-3">Your cart is empty.</p>
-            </div>
+            <EmptyState icon="remove_shopping_cart" title="Your cart is empty." />
           ) : (
             <div className="space-y-4">
               {cartItems.map((item, idx) => (
@@ -397,10 +470,10 @@ function CheckoutForm() {
                   
                   <div className="flex items-center justify-between sm:justify-end gap-4 min-w-[140px]">
                     {item.quantityType === 'unit' ? (
-                      <div className="flex items-center bg-white rounded-lg shadow-sm border border-outline-variant/30 overflow-hidden text-xs">
-                        <button onClick={() => updateCartQuantity(item._id, -1)} className="px-2.5 py-1 text-primary hover:bg-primary/10 font-black">-</button>
+                      <div className="flex items-center bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant/30 overflow-hidden text-xs">
+                        <button onClick={() => updateCartQuantity(item._id, -1)} disabled={isShopClosed} className="px-2.5 py-1 text-primary hover:bg-primary/10 font-black disabled:opacity-60 disabled:cursor-not-allowed">-</button>
                         <span className="px-1 font-bold w-6 text-center text-on-surface">{item.quantity}</span>
-                        <button onClick={() => updateCartQuantity(item._id, 1)} className="px-2.5 py-1 text-primary hover:bg-primary/10 font-black">+</button>
+                        <button onClick={() => updateCartQuantity(item._id, 1)} disabled={isShopClosed} className="px-2.5 py-1 text-primary hover:bg-primary/10 font-black disabled:opacity-60 disabled:cursor-not-allowed">+</button>
                       </div>
                     ) : (
                       <span className="text-xs font-bold text-on-surface bg-surface-container-high px-2 py-1 rounded-md">
@@ -431,11 +504,60 @@ function CheckoutForm() {
           {cartItems.length > 0 && (
             <form onSubmit={handleSubmit} className="mt-8 space-y-4">
               <div>
-                <span className="font-label text-primary font-bold tracking-widest text-[10px] uppercase">Delivery Details</span>
+                <span className="font-label text-primary font-bold tracking-widest text-[10px] uppercase">Fulfillment</span>
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <label
+                    className={`flex flex-col items-center gap-1.5 p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 text-center ${
+                      fulfillmentType === 'Delivery'
+                        ? 'border-primary bg-primary/5 shadow-md shadow-primary/10'
+                        : 'border-transparent bg-surface-container-high hover:bg-surface-container-highest'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="fulfillmentType"
+                      value="Delivery"
+                      checked={fulfillmentType === 'Delivery'}
+                      onChange={(e) => setFulfillmentType(e.target.value)}
+                      className="sr-only"
+                    />
+                    <span className="material-symbols-outlined text-on-surface-variant">directions_bike</span>
+                    <p className="font-bold text-sm text-on-surface">Delivery</p>
+                  </label>
+                  <label
+                    className={`flex flex-col items-center gap-1.5 p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 text-center ${
+                      fulfillmentType === 'Pickup'
+                        ? 'border-primary bg-primary/5 shadow-md shadow-primary/10'
+                        : 'border-transparent bg-surface-container-high hover:bg-surface-container-highest'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="fulfillmentType"
+                      value="Pickup"
+                      checked={fulfillmentType === 'Pickup'}
+                      onChange={(e) => setFulfillmentType(e.target.value)}
+                      className="sr-only"
+                    />
+                    <span className="material-symbols-outlined text-on-surface-variant">storefront</span>
+                    <p className="font-bold text-sm text-on-surface">Self Pickup</p>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <span className="font-label text-primary font-bold tracking-widest text-[10px] uppercase">Your Details</span>
               </div>
               <input type="text" placeholder="Your Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="input-stitch" required />
               <input type="text" placeholder="Contact Number" value={customerContact} onChange={(e) => setCustomerContact(e.target.value)} className="input-stitch" required />
-              <textarea placeholder="Delivery Address" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} className="input-stitch resize-none" rows={2} required />
+              <textarea
+                placeholder={fulfillmentType === 'Pickup' ? 'Notes for the shop (optional)' : 'Delivery Address'}
+                value={customerAddress}
+                onChange={(e) => setCustomerAddress(e.target.value)}
+                className="input-stitch resize-none"
+                rows={2}
+                required={fulfillmentType !== 'Pickup'}
+              />
 
               {/* Payment Method Selection */}
               <div className="pt-2">
@@ -454,9 +576,10 @@ function CheckoutForm() {
                       value="COD"
                       checked={paymentMethod === 'COD'}
                       onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-4 h-4 text-primary accent-indigo-600"
+                      disabled={isShopClosed}
+                      className="w-4 h-4 text-primary accent-primary"
                     />
-                    <span className="material-symbols-outlined text-emerald-600">local_shipping</span>
+                    <span className="material-symbols-outlined text-on-surface-variant">local_shipping</span>
                     <div>
                       <p className="font-bold text-sm text-on-surface">Cash on Delivery</p>
                       <p className="text-xs text-on-surface-variant">Pay when you receive your order</p>
@@ -475,9 +598,10 @@ function CheckoutForm() {
                       value="Online"
                       checked={paymentMethod === 'Online'}
                       onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-4 h-4 text-primary accent-indigo-600"
+                      disabled={isShopClosed}
+                      className="w-4 h-4 text-primary accent-primary"
                     />
-                    <span className="material-symbols-outlined text-indigo-600">credit_card</span>
+                    <span className="material-symbols-outlined text-on-surface-variant">credit_card</span>
                     <div>
                       <p className="font-bold text-sm text-on-surface">Online Payment</p>
                       <p className="text-xs text-on-surface-variant">Pay securely via Razorpay (UPI, Card, Net Banking)</p>
@@ -488,19 +612,21 @@ function CheckoutForm() {
 
               <button
                 type="submit"
-                disabled={isProcessing}
+                disabled={isProcessing || isShopClosed}
                 className={`w-full mt-2 ${
                   paymentMethod === 'Online'
                     ? 'btn-primary'
                     : 'btn-success'
                 }`}
               >
-                {isProcessing ? (
+                {isShopClosed ? (
                   <>
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
+                    <span className="material-symbols-outlined text-lg">storefront</span>
+                    Shop Closed
+                  </>
+                ) : isProcessing ? (
+                  <>
+                    <Spinner size="sm" />
                     Processing…
                   </>
                 ) : paymentMethod === 'Online' ? (
