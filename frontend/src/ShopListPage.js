@@ -220,7 +220,7 @@ function ShopListPage() {
                     type="text"
                     value={pincode}
                     onChange={(e) => setPincode(e.target.value)}
-                    placeholder="Enter pincode (e.g. 799046)"
+                    placeholder="Enter pincode (e.g. 231206,799046)"
                     className="w-full bg-transparent border-none focus:ring-0 text-on-surface py-3 font-medium placeholder-outline/60 outline-none"
                   />
                 </div>
