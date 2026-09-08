@@ -276,7 +276,7 @@ function RegisterPage() {
 
                   <div>
                     <label className="label-stitch">Pincode</label>
-                    <input type="text" value={pincode} onChange={(e) => setPincode(e.target.value)} className="input-stitch" placeholder="799046" required />
+                    <input type="text" value={pincode} onChange={(e) => setPincode(e.target.value)} className="input-stitch" placeholder="231206" required />
                   </div>
                 </>
               )}
